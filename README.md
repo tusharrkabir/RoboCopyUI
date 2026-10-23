@@ -4,59 +4,103 @@
 
 <img src="Assets/app_icon.png" alt="RoboCopyUI Logo" width="128" height="128" />
 
-### *Next-Gen, High-Performance File Transfer GUI for Windows*
+### *Next-Gen, Ultra-Fast Multi-Threaded File Transfer GUI for Windows*
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![UI Framework](https://img.shields.io/badge/Framework-WPF%20XAML-00599E?style=for-the-badge)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
-[![Version](https://img.shields.io/badge/Version-1.7.0-brightgreen?style=for-the-badge)](https://github.com/tusharrkabir/RoboCopyUI/releases)
+[![Max Threads](https://img.shields.io/badge/Multi--Threading-Up%20to%20128%20Threads-FF4081?style=for-the-badge&logo=speedtest&logoColor=white)](https://github.com/tusharrkabir/RoboCopyUI)
+[![Version](https://img.shields.io/badge/Version-1.7.0-brightgreen?style=for-the-badge)](https://github.com/tusharrkabir/RoboCopyUI)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 <br/>
 
-**RoboCopyUI** transforms Windows' enterprise-grade command-line tool `robocopy.exe` into a sleek, modern, cyberpunk-styled desktop utility. Experience lightning-fast multi-threaded copies, live MB/s telemetry, file conflict scanning, and lightning-fast directory purging without ever touching a command prompt.
+**RoboCopyUI** transforms Windows' legendary enterprise-grade copying tool (`robocopy.exe`) into an ultra-modern, high-velocity desktop application. Built specifically to eliminate the notorious Windows Explorer slowdowns on massive folders and millions of tiny files.
 
 </div>
 
 ---
 
-## 📸 Interface Preview
+## 📸 Interface & Live Showcase
 
-### ⚡ Active High-Speed Transfer
-> Real-time progress with dynamic neon gradient bar, transfer velocity (MB/s), remaining count, and countdown ETA.
+### ⚡ Active High-Speed Transfer (Real-Time 214+ MB/s)
+> Live progress showing sustained **214.2 MB/s** velocity with **MT: 96** parallel threads, countdown ETA, and real-time bytes transferred.
 
 <div align="center">
-  <img src="docs/screenshots/active-transfer.png" alt="RoboCopyUI Active Transfer Preview" width="90%" />
+  <img src="docs/screenshots/copying-active.png" alt="RoboCopyUI Active Transfer - 214 MB/s" width="92%" />
 </div>
 
 <br/>
 
-### 📂 Interactive Skipped Files Drawer & Transfer Complete
-| 🔍 Skipped Files Drawer | ✅ Transfer Finished |
-| :---: | :---: |
-| <img src="docs/screenshots/skipped-drawer.png" alt="Skipped Files Drawer" width="100%" /> | <img src="docs/screenshots/transfer-complete.png" alt="Transfer Complete" width="100%" /> |
-| *View exact reasons why files were skipped (Access Denied, In-Use, Corrupted, Filtered).* | *Accurate summary with total transfer time, average speed, and bytes transferred.* |
+### ✅ Transfer Completed in 34 Seconds
+> **3.2 GB** transferred in just **34 seconds** with a **95.4 MB/s** average speed across multi-threaded operations.
+
+<div align="center">
+  <img src="docs/screenshots/copy-complete.png" alt="RoboCopyUI Completed Summary" width="92%" />
+</div>
 
 ---
 
-## ✨ Key Features
+## 🎨 Themes & Customization
 
-- **⚡ Enterprise-Grade Multi-Threading (`/MT`)**:
-  - Leverages native `robocopy.exe` with optimized thread configurations tailored for NVMe SSDs, HDDs, and network shares (SMB/NAS).
-- **🎨 Modern Dark & Cyberpunk Aesthetics**:
-  - Custom WPF styling with glowing neon indicators, sleek dark glass acrylic backgrounds, and window blur effects (`WindowBlurHelper`).
-- **📊 Real-Time Telemetry & Instant ETA**:
-  - Rolling-average speed calculator (`SpeedCalculator.cs`) and dynamic time-to-completion estimator (`EtaEstimator.cs`).
-- **🔍 Real-Time Skipped Files Inspector**:
-  - Expandable drawer tracks every file skipped during transfer with live classification (Permission errors, file locks, filters, or corruption).
-- **⚔️ Collision Scanner & Smart Renaming**:
-  - Pre-scans source and destination to detect file collisions before starting and applies automatic collision renaming policies (`CollisionRenamer.cs`).
-- **🗑️ Turbo Fast Delete (RoboDelete)**:
-  - Deletes millions of nested directories and deep file trees in seconds using the Robocopy mirror purge technique, bypassing Windows Explorer lockups.
-- **🖱️ Windows Shell Integration**:
-  - Optional Windows Explorer context menu integration (`ShellRegistry.cs`) for seamless right-click paste & copy operations.
-- **🌓 Theming System**:
-  - Built-in `DarkTheme`, `LightTheme`, and `MidnightTheme` resource dictionaries (`ThemeManager.cs`).
+RoboCopyUI includes an integrated theme engine supporting **Midnight (Cyber Dark)**, **Clean Light**, and **Classic Dark** modes:
+
+| 🌌 Midnight Theme | ☀️ Clean Light Theme | 🌙 Classic Dark Theme |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/settings-midnight.png" alt="Midnight Theme" width="100%" /> | <img src="docs/screenshots/settings-light.png" alt="Light Theme" width="100%" /> | <img src="docs/screenshots/settings-dark.png" alt="Dark Theme" width="100%" /> |
+| *High-contrast cyberpunk glow* | *Modern, clean daytime aesthetics* | *Sleek, deep neutral dark mode* |
+
+---
+
+## 🔥 Why RoboCopyUI? (Windows Explorer vs RoboCopyUI)
+
+Anyone who has tried copying `node_modules`, Python virtual environments, Git repos, or massive game assets knows the pain: **standard Windows Explorer takes an eternity on small chunk files**.
+
+Windows Explorer copies files sequentially (single-threaded). When transferring thousands of tiny files, the filesystem metadata overhead causes transfer speeds to drop to a crawl—sometimes KB/s or freezing completely.
+
+### ⚡ RoboCopyUI Solves This Forever:
+
+| Feature | Standard Windows Copy | 🚀 RoboCopyUI |
+| :--- | :---: | :---: |
+| **Concurrency** | ❌ Single-threaded (1 file at a time) | ⚡ **Up to 128 Parallel Worker Threads (`/MT:128`)** |
+| **Small Files / Chunks (`node_modules`, source code)** | 🐢 **Takes an eternity** (speed drops to KB/s) | 🚀 **Blasts at maximum drive bandwidth (200+ MB/s)** |
+| **Drive Hardware Detection** | ❌ Generic copy handler | 🤖 **Smart Auto-Tuner (Tailors threads for NVMe / SSD / HDD)** |
+| **Multi-GB Large Files** | ⚠️ Floods Windows OS RAM cache | 🏎️ **Large File Optimization (`/J` Unbuffered Direct I/O)** |
+| **Locked / In-Use Files** | ❌ Halts entire transfer with modal error | 🛡️ **Zero-halt retry engine (`/R:0 /W:0` fully customizable)** |
+| **Folder Purging / Deletion** | ⏳ Explorer locks up on deep directories | 🗑️ **Turbo RoboDelete (purges 100,000s files in seconds)** |
+| **Visual Telemetry** | 📉 Fluctuating, inaccurate estimate | 📊 **Accurate rolling MB/s speed & dynamic ETA** |
+| **Explorer Integration** | Default | 🖱️ **Context Menu integration (Right-click RoboCopy / RoboCut / RoboPaste)** |
+
+---
+
+## ✨ Key Features Breakdown
+
+### 1. 🚀 Extreme Multi-Threading (Up to 128 Threads)
+- Configure anywhere from **1 to 128 parallel threads** (`/MT`).
+- Small files, deep folder hierarchies, and fragmented assets are transferred concurrently instead of waiting one by one.
+- **Smart Auto-Tune**: Automatically probes drive hardware types (NVMe PCIe SSD, SATA SSD, Spinning HDD, or Network SMB share) and applies the optimal thread ceiling to prevent disk thrashing.
+
+### 2. 🏎️ Large File Optimization (`/J` Unbuffered I/O)
+- Switches to unbuffered direct I/O for multi-GB files (ISOs, virtual disks, 4K raw video).
+- Bypasses the Windows file system cache directly to physical storage, preserving your system RAM and avoiding cache thrashing.
+
+### 3. 🛡️ Fault Tolerance & Custom Retry Rules (`/R` & `/W`)
+- Configure exact retry attempts and wait delay intervals for locked, busy, or permission-restricted files.
+- Never wake up to a transfer that halted at 3 AM because a single temp file was open in another app.
+
+### 4. 🗑️ Turbo Fast Delete (RoboDelete)
+- Deleting deep directory trees in Windows Explorer can take 20+ minutes while Explorer calculates size.
+- RoboCopyUI uses the **Robocopy Mirror Purge** technique to eradicate hundreds of thousands of files and directories in seconds.
+
+### 5. 🔍 Interactive Skipped Files Inspector
+- Keep track of every file skipped with live classification:
+  - *Access Denied*
+  - *File In Use*
+  - *Corrupted File*
+  - *Filtered by Pattern*
+
+### 6. ⚔️ Collision Scanner & Smart Renaming
+- Pre-scans source and destination to detect file collisions before starting.
+- Options for automatic collision renaming, overwriting, or skipping.
 
 ---
 
@@ -75,7 +119,7 @@
 │ Collision    │   │  (Process I/O   │   │  Runner        │
 │ Detection    │   │  Streaming)     │   │  (Fast Purge)  │
 └──────────────┘   └────────┬────────┘   └────────────────┘
-                            │ Stdout Stream
+                            │ Real-time Stdout Stream
                             ▼
            ┌────────────────────────────────┐
            │      Telemetry & Parsing       │
@@ -95,7 +139,7 @@
 | **Operating System** | Windows 10 (Build 19041+) / Windows 11 (64-bit) |
 | **Runtime Target** | [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0) (`net10.0-windows`) |
 | **UI Framework** | Windows Presentation Foundation (WPF) + Windows Forms interop |
-| **IDE Supported** | Visual Studio 2022 (v17.12+) / JetBrains Rider / VS Code with C# Dev Kit |
+| **IDE Supported** | Visual Studio 2022 (v17.12+) / JetBrains Rider / VS Code |
 | **Engine** | Microsoft Windows Native `robocopy.exe` |
 
 ---
@@ -109,24 +153,24 @@ cd RoboCopyUI
 ```
 
 ### 2. Open in Visual Studio
-Double-click `RoboCopyUI.slnx` or `RoboCopyUI.csproj` to load the solution in **Visual Studio 2022**.
+Open `RoboCopyUI.slnx` or `RoboCopyUI.csproj` in **Visual Studio 2022**.
 
-*Ensure the **.NET Desktop Development** workload is installed in your Visual Studio Installer.*
+*Ensure the **.NET Desktop Development** workload is installed.*
 
-### 3. Build & Run via .NET CLI
-You can also build and run directly from the command line:
-
+### 3. Build & Run via CLI
 ```powershell
-# Restore dependencies and build
+# Restore & build
 dotnet build
 
 # Launch the application
 dotnet run --project RoboCopyUI.csproj
+
+# Launch Settings Window directly
+dotnet run --project RoboCopyUI.csproj --settings
 ```
 
-### 4. Publishing a Self-Contained Binary
-To publish a portable single-file executable for distribution:
-
+### 4. Publish a Portable Executable
+To generate a single-file, self-contained executable:
 ```powershell
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
@@ -154,12 +198,12 @@ RoboCopyUI/
 │   ├── RobocopyLineParser.cs # Real-time line-by-line CLI parser
 │   └── SpeedCalculator.cs  # Multi-sample bandwidth speed calculation
 ├── Themes/                 # WPF XAML themes (Dark, Light, Midnight)
-├── docs/                   # Documentation and high-resolution screenshots
-├── App.xaml / App.xaml.cs  # Application entrypoint & single-instance handler
+├── docs/screenshots/       # High-resolution real UI screenshots
+├── App.xaml / App.xaml.cs  # Application entrypoint & CLI argument router
 ├── MainWindow.xaml (.cs)   # Primary dashboard UI and real-time visualizer
 ├── SettingsWindow.xaml(.cs)# Advanced configurations, thread tuning & presets
 ├── RoboCopyUI.csproj       # Project build definition (.NET 10 WPF)
-├── RoboCopyUI.slnx         # Solution definition
+├── RoboCopyUI.slnx         # Visual Studio Solution definition
 └── .gitignore              # Ignores build artifacts (bin/obj), setups, and VS cache
 ```
 
@@ -167,11 +211,11 @@ RoboCopyUI/
 
 ## 🤝 Contributing
 
-Contributions, feature requests, and bug reports are welcome!
-1. Fork the Project (`https://github.com/tusharrkabir/RoboCopyUI/fork`)
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m "Add some AmazingFeature"`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+Contributions, issues, and feature requests are welcome!
+1. Fork the Repository
+2. Create your Feature Branch (`git checkout -b feature/NewFeature`)
+3. Commit your Changes (`git commit -m "Add some NewFeature"`)
+4. Push to the Branch (`git push origin feature/NewFeature`)
 5. Open a Pull Request
 
 ---
