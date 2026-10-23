@@ -1,0 +1,513 @@
+<Window x:Class="RoboCopyUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RoboCopyUI"
+        Icon="/Assets/app_icon.ico"
+        Width="650"
+        Height="230"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo x:Name="TaskbarProgress" ProgressState="None" ProgressValue="0"/>
+    </Window.TaskbarItemInfo>
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- MINIMAL MODERN SCROLLBAR -->
+            <Style x:Key="MinimalScrollBarThumb" TargetType="{x:Type Thumb}">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="IsTabStop" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Thumb}">
+                            <Border x:Name="rectangle" CornerRadius="3.5" Background="{DynamicResource SubtleText}" Opacity="0.45" Margin="1,0"/>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="rectangle" Property="Opacity" Value="0.85"/>
+                                    <Setter TargetName="rectangle" Property="Background" Value="{DynamicResource Blue}"/>
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter TargetName="rectangle" Property="Opacity" Value="1.0"/>
+                                    <Setter TargetName="rectangle" Property="Background" Value="{DynamicResource Purple}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="MinimalScrollBar" TargetType="{x:Type ScrollBar}">
+                <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False"/>
+                <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+                <Setter Property="Width" Value="7"/>
+                <Setter Property="MinWidth" Value="7"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                            <Grid x:Name="Bg" SnapsToDevicePixels="True">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True" IsEnabled="{TemplateBinding IsMouseOver}">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Style="{x:Null}" Focusable="False" Opacity="0" Width="0"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource MinimalScrollBarThumb}"/>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Style="{x:Null}" Focusable="False" Opacity="0" Width="0"/>
+                                    </Track.IncreaseRepeatButton>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ModernScrollViewerStyle" TargetType="{x:Type ScrollViewer}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                            <Grid x:Name="Grid" Background="{TemplateBinding Background}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <ScrollContentPresenter x:Name="PART_ContentHost" Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Padding}"/>
+                                <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Grid.Row="0"
+                                           Cursor="Arrow" Minimum="0" Maximum="{TemplateBinding ScrollableHeight}"
+                                           Value="{TemplateBinding VerticalOffset}"
+                                           ViewportSize="{TemplateBinding ViewportHeight}"
+                                           Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                           Style="{StaticResource MinimalScrollBar}"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ModernButtonStyle" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+                <Setter Property="BorderThickness" Value="1.2"/>
+                <Setter Property="Padding" Value="15,6"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="ButtonBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="9">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource BorderColor}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="PauseButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                <Setter Property="BorderBrush" Value="#6C6CFF"/>
+                <Setter Property="Foreground" Value="#9C93FF"/>
+            </Style>
+
+            <Style x:Key="CancelButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                <Setter Property="BorderBrush" Value="#EF5C8C"/>
+                <Setter Property="Foreground" Value="#FF7CA6"/>
+            </Style>
+
+            <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="30"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="HoverBorder" Width="30" Height="30" Background="Transparent" CornerRadius="7" SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Background" Value="{DynamicResource BorderColor}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="HoverBorder" Width="30" Height="30" Background="Transparent" CornerRadius="7">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Background" Value="#C42B5A"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HoverBorder" Property="Background" Value="#9F1F47"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border Margin="4"
+            Background="{DynamicResource CardBackground}"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="14">
+
+        <Grid>
+
+            <!-- ========================= MAIN CONTENT ========================= -->
+            <Grid Margin="15,11">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="11"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="11"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- HEADER -->
+                <Grid Grid.Row="0" Height="46" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="44"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="44" Height="44" CornerRadius="10" Background="{DynamicResource LogoBadgeBackground}" BorderBrush="{DynamicResource LogoBadgeBorder}" BorderThickness="1">
+                        <Image Source="/Assets/app_icon.png" Width="30" Height="30" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock x:Name="ScanningStatusText" 
+                               Grid.Column="0" Grid.ColumnSpan="4"
+                               Text="scanning..." 
+                               FontSize="12" 
+                               FontWeight="SemiBold" 
+                               Foreground="{DynamicResource Purple}" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center" 
+                               Margin="0,0,0,15"
+                               Visibility="Collapsed" />
+
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock x:Name="JobTitleText" Text="RoboCopy" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <TextBlock x:Name="FromLabel" Text="From " FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock x:Name="SourcePathText" Text="C:\Source" FontSize="11" Foreground="{DynamicResource Purple}" TextTrimming="CharacterEllipsis"/>
+                            <StackPanel x:Name="DestGroupPanel" Orientation="Horizontal">
+                                <TextBlock Text="   →   " FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
+                                <TextBlock Text="To " FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
+                                <TextBlock x:Name="DestPathText" Text="D:\Destination" FontSize="11" Foreground="{DynamicResource Purple}" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
+                        <Border x:Name="MtBadge" Margin="0,0,6,0" Padding="7,3" CornerRadius="6" Background="{DynamicResource LogoBadgeBackground}" BorderBrush="{DynamicResource LogoBadgeBorder}" BorderThickness="1" ToolTip="Multi-threading Level (/MT)">
+                            <TextBlock x:Name="MtLevelText" Text="MT: 8" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Purple}" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Button x:Name="BtnSettings" Style="{StaticResource TitleBarButtonStyle}" Click="BtnSettings_Click" ToolTip="Settings">
+                            <Viewbox Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path Fill="{DynamicResource PrimaryText}" Data="M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94c0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94l-0.36,-2.54c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41l-3.84,0c-0.24,0 -0.43,0.17 -0.47,0.41l-0.36,2.54c-0.59,0.24 -1.13,0.57 -1.62,0.94l-2.39,-0.96c-0.22,-0.08 -0.47,0 -0.59,0.22l-1.92,3.32c-0.12,0.21 -0.07,0.47 0.12,0.61l2.03,1.58c-0.05,0.3 -0.07,0.62 -0.07,0.94c0,0.32 0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41l3.84,0c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.2 0.07,-0.47 -0.12,-0.61l-2.01,-1.58zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6c0,-1.98 1.62,-3.6 3.6,-3.6c1.98,0 3.6,1.62 3.6,3.6c0,1.98 -1.62,3.6 -3.6,3.6z"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+
+                        <Button x:Name="BtnMinimize" Margin="4,0,0,0" Style="{StaticResource TitleBarButtonStyle}" Click="BtnMinimize_Click" ToolTip="Minimize">
+                            <Grid Width="30" Height="30" Background="Transparent">
+                                <Rectangle Width="9" Height="1.6" RadiusX="1" RadiusY="1" Fill="{DynamicResource PrimaryText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Button>
+
+                        <Button x:Name="BtnClose" Margin="4,0,0,0" Style="{StaticResource CloseButtonStyle}" Click="BtnClose_Click" ToolTip="Close">
+                            <Grid Width="30" Height="30" Background="Transparent">
+                                <Canvas Width="10" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Line X1="1.7" Y1="1.7" X2="8.3" Y2="8.3" Stroke="{DynamicResource PrimaryText}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Line X1="8.3" Y1="1.7" X2="1.7" Y2="8.3" Stroke="{DynamicResource PrimaryText}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                </Canvas>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- PROGRESS CARD -->
+                <Border Grid.Row="2" Height="106" Margin="0,-5,0,0" CornerRadius="11" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Background="{DynamicResource WindowBackground}">
+                    <Grid Margin="13,7,13,5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="19"/>
+                            <RowDefinition Height="3"/>
+                            <RowDefinition Height="15"/>
+                            <RowDefinition Height="5"/>
+                            <RowDefinition Height="46"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="48"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border x:Name="ProgressTrack" Grid.Column="0" Height="10" CornerRadius="5" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" VerticalAlignment="Center">
+                                <Grid>
+                                    <Border x:Name="ProgressFill" Width="0" HorizontalAlignment="Left" CornerRadius="5">
+                                        <Border.Background>
+                                            <LinearGradientBrush x:Name="ProgressFillBrush" StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#4E63FA" Offset="0"/>
+                                                <GradientStop Color="#9A7DFB" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock x:Name="ProgressPercentText" Grid.Column="1" Text="0%" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Purple}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid Grid.Row="2" Margin="0,-2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="CopiedInfoText" FontSize="11" VerticalAlignment="Center">
+                                <Run x:Name="CopiedLabelRun" Text="Copied : " Foreground="{DynamicResource SecondaryText}"/>
+                                <Run x:Name="CopiedAmountRun" Text="0 GB" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold"/>
+                                <Run Text=" / " Foreground="{DynamicResource SecondaryText}"/>
+                                <Run x:Name="TotalAmountRun" Text="0 GB" Foreground="{DynamicResource SecondaryText}"/>
+                            </TextBlock>
+
+                            <TextBlock x:Name="RemainingInfoText" Grid.Column="1" FontSize="11" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <Run x:Name="RemainingLineLabelRun" Text="Remaining : "/>
+                                <Run x:Name="RemainingLineValueRun" Text="0 GB" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                        </Grid>
+
+                        <Grid Grid.Row="3" Margin="0,3,0,3">
+                            <Border Height="1" Background="{DynamicResource BorderColor}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid Grid.Row="4" Margin="0,2,0,0" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="1"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="1"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0" Height="48" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="54"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Viewbox Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#B49CFF" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M6,3 L14,3 L18,7 L18,21 L6,21 Z"/>
+                                        <Path Stroke="#B49CFF" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M14,3 L14,7 L18,7"/>
+                                        <Line X1="9" Y1="11" X2="15" Y2="11" Stroke="#B49CFF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="9" Y1="14" X2="15" Y2="14" Stroke="#B49CFF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="9" Y1="17" X2="13" Y2="17" Stroke="#B49CFF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    </Canvas>
+                                </Viewbox>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="RemainingCardLabel" Text="Remaining" FontSize="10" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock x:Name="RemainingCardValue" Text="0 GB" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Grid.Column="1" Width="1" Height="40" Background="{DynamicResource BorderColor}" VerticalAlignment="Center"/>
+
+                            <Grid Grid.Column="2" Margin="12,0,0,0" Height="48" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="54"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Viewbox Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#8FA6FF" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M3,15.3 A9,9 0 0 1 21,15.3"/>
+                                        <Line X1="6.5" Y1="10.3" X2="7.8" Y2="11.5" Stroke="#8FA6FF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="17.5" Y1="11.5" X2="18.8" Y2="10.3" Stroke="#8FA6FF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="12" Y1="15.3" X2="18" Y2="9.3" Stroke="#8FA6FF" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Ellipse Width="4.8" Height="4.8" Fill="#8FA6FF" Canvas.Left="9.6" Canvas.Top="12.9"/>
+                                    </Canvas>
+                                </Viewbox>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SpeedCardLabel" Text="Speed" FontSize="10" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock x:Name="SpeedCardValue" Text="0 MB/s" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Grid.Column="3" Width="1" Height="40" Background="{DynamicResource BorderColor}" VerticalAlignment="Center"/>
+
+                            <Grid Grid.Column="4" Margin="12,0,0,0" Height="48" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="54"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Viewbox Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Ellipse Width="18" Height="18" Stroke="#FF9CBE" StrokeThickness="1.8" Canvas.Left="3" Canvas.Top="3"/>
+                                        <Line X1="12" Y1="12" X2="12" Y2="7" Stroke="#FF9CBE" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="12" Y1="12" X2="16" Y2="14" Stroke="#FF9CBE" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Ellipse Width="3.8" Height="3.8" Fill="#FF9CBE" Canvas.Left="10.1" Canvas.Top="10.1"/>
+                                    </Canvas>
+                                </Viewbox>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="TimeCardLabel" Text="Time remaining" FontSize="10" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock x:Name="TimeCardValue" Text="00:00" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- FOOTER -->
+                <Grid Grid.Row="4" Margin="0,-2,0,0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.ColumnSpan="2" VerticalAlignment="Stretch" IsHitTestVisible="False" Panel.ZIndex="-1">
+                        <Canvas VerticalAlignment="Bottom" Margin="0,-15,0,7" Height="34">
+                            <Line X1="0" Y1="12" X2="70" Y2="12" Stroke="{DynamicResource BorderColor}" StrokeThickness="1.2"/>
+                            <Line X1="70" Y1="12" X2="87" Y2="27" Stroke="{DynamicResource BorderColor}" StrokeThickness="1.2"/>
+                            <Line X1="87" Y1="27" X2="500" Y2="27" Stroke="{DynamicResource BorderColor}" StrokeThickness="1.2"/>
+                        </Canvas>
+                    </Grid>
+
+                    <Border Grid.Column="0" x:Name="SkippedToggle" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Center" MouseLeftButtonUp="SkippedToggle_Click">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" Margin="2,0" VerticalAlignment="Center">
+                                <TextBlock Text="Skipped" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="SkippedCount" Text=" (0)" FontSize="11" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                <Viewbox Width="10" Height="10" Margin="7,2,0,0">
+                                    <Canvas x:Name="SkippedChevron" Width="12" Height="12" Margin="-7,0,0,0" RenderTransformOrigin="0.5,0.5">
+                                        <Canvas.RenderTransform>
+                                            <RotateTransform x:Name="SkippedChevronRotate" Angle="0"/>
+                                        </Canvas.RenderTransform>
+                                        <Path Stroke="{DynamicResource Purple}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M2,4 L6,8 L10,4"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </StackPanel>
+
+                            <Popup x:Name="SkippedPopup" PlacementTarget="{Binding ElementName=SkippedToggle}" Placement="Top" VerticalOffset="-10" AllowsTransparency="True" StaysOpen="False" Closed="SkippedPopup_Closed" IsOpen="False">
+                                <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="10" Padding="16,13" Width="580" MaxHeight="300">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="5" BlurRadius="20" Opacity="0.5"/>
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="172"/>
+                                                <ColumnDefinition Width="172"/>
+                                                <ColumnDefinition Width="74"/>
+                                                <ColumnDefinition Width="124"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="File Name" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}"/>
+                                            <TextBlock Grid.Column="1" Text="Original Path" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}"/>
+                                            <TextBlock Grid.Column="2" Text="Size" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}"/>
+                                            <TextBlock Grid.Column="3" Text="Skipped Reason" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}"/>
+                                        </Grid>
+                                        <Border Grid.Row="1" Height="1" Background="{DynamicResource BorderColor}" Margin="0,0,0,3"/>
+                                        <ScrollViewer Grid.Row="2" x:Name="SkippedScrollViewer" Style="{StaticResource ModernScrollViewerStyle}" MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="SkippedScrollViewer_PreviewMouseWheel" Padding="0,0,6,0">
+                                            <StackPanel x:Name="SkippedRowsPanel"/>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="BtnPause" Style="{StaticResource PauseButtonStyle}" Width="100" Height="30" Margin="0,0,10,0" Content="Pause" Click="BtnPause_Click"/>
+                        <Button x:Name="BtnCancel" Style="{StaticResource CancelButtonStyle}" Width="100" Height="30" Content="Cancel" Click="BtnCancel_Click"/>
+                    </StackPanel>
+                </Grid>
+
+            </Grid>
+
+            <!-- ==================== COLLISION OVERLAY ==================== -->
+            <Grid x:Name="CollisionOverlay" Background="#CC05070D" Visibility="Collapsed" Panel.ZIndex="100">
+                <Border Width="440" Padding="24,20" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="14"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="8" BlurRadius="28" Opacity="0.6"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="Items Already Exist" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="CollisionMessageText" Text="Some items already exist in the destination folder."
+                                   FontSize="12.5" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" Margin="0,0,0,18"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="BtnCollisionReplace" Style="{StaticResource PauseButtonStyle}" Width="110" Height="32" Margin="0,0,8,0" Content="Replace" Click="BtnCollisionReplace_Click"/>
+                            <Button x:Name="BtnCollisionSkip" Style="{StaticResource ModernButtonStyle}" Width="110" Height="32" Margin="0,0,8,0" Content="Skip" Click="BtnCollisionSkip_Click"/>
+                            <Button x:Name="BtnCollisionRename" Style="{StaticResource CancelButtonStyle}" Width="110" Height="32" Content="Rename" Click="BtnCollisionRename_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </Grid>
+
+    </Border>
+
+</Window>

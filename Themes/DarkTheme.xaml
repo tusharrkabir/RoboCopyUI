@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DARK THEME PALETTE -->
+    <SolidColorBrush x:Key="WindowBackground" Color="#05070D"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#0B0B12"/>
+    <SolidColorBrush x:Key="CardHoverBackground" Color="#12121C"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#20202C"/>
+    <SolidColorBrush x:Key="LogoBadgeBackground" Color="#12121C"/>
+    <SolidColorBrush x:Key="LogoBadgeBorder" Color="#20202C"/>
+
+    <SolidColorBrush x:Key="PrimaryText" Color="#F2F2F7"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#9B9BA8"/>
+    <SolidColorBrush x:Key="SubtleText" Color="#6C6C7D"/>
+
+    <SolidColorBrush x:Key="Blue" Color="#5B7CFA"/>
+    <SolidColorBrush x:Key="Purple" Color="#8B7CF9"/>
+    <SolidColorBrush x:Key="Pink" Color="#EF5C8C"/>
+    <SolidColorBrush x:Key="Green" Color="#34C759"/>
+    <SolidColorBrush x:Key="Amber" Color="#FF9F0A"/>
+
+    <SolidColorBrush x:Key="InputBackground" Color="#10101A"/>
+    <SolidColorBrush x:Key="InputBorder" Color="#2A2A3C"/>
+
+</ResourceDictionary>

@@ -1,0 +1,30 @@
+## Visual Studio build and cache folders
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Inno Setup & Installer outputs
+Installer/
+*.exe
+*.msi
+*.zip
+
+## Visual Studio auto-generated / backup files
+*.nupkg
+*.snupkg
+*.VisualState.xml
+TestResults/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/

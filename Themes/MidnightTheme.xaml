@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- MIDNIGHT GLOW THEME PALETTE (MATCHING MODERN GLOW UI MOCKUP) -->
+    <SolidColorBrush x:Key="WindowBackground" Color="#12121A"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#1A1A26"/>
+    <SolidColorBrush x:Key="CardHoverBackground" Color="#222234"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#2E2E42"/>
+    <SolidColorBrush x:Key="LogoBadgeBackground" Color="#222234"/>
+    <SolidColorBrush x:Key="LogoBadgeBorder" Color="#2E2E42"/>
+
+    <SolidColorBrush x:Key="PrimaryText" Color="#F4F4FA"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#9494A8"/>
+    <SolidColorBrush x:Key="SubtleText" Color="#66667A"/>
+
+    <SolidColorBrush x:Key="Blue" Color="#38BDF8"/>
+    <SolidColorBrush x:Key="Purple" Color="#A78BFA"/>
+    <SolidColorBrush x:Key="Pink" Color="#F43F5E"/>
+    <SolidColorBrush x:Key="Green" Color="#34D399"/>
+    <SolidColorBrush x:Key="Amber" Color="#FBBF24"/>
+
+    <SolidColorBrush x:Key="InputBackground" Color="#161622"/>
+    <SolidColorBrush x:Key="InputBorder" Color="#32324A"/>
+
+</ResourceDictionary>

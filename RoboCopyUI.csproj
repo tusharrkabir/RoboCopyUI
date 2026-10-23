@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+    <Authors>Tushar</Authors>
+    <Company>MT Electronics</Company>
+    <Product>RoboCopyUI</Product>
+    <Copyright>Copyright © 2026 Tushar, MT Electronics</Copyright>
+    <Version>1.7.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="FileConflict.cs" />
+    <Compile Remove="Installer\**" />
+    <EmbeddedResource Remove="Installer\**" />
+    <Resource Include="Assets\app_icon.png" />
+    <Resource Include="Assets\app_icon.ico" />
+    <None Include="Assets\app_icon.ico" Link="app_icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
