@@ -77,6 +77,21 @@ RoboCopyUI includes an integrated theme engine supporting **Midnight (Cyber Dark
 
 ---
 
+## 🖱️ Native Windows Explorer Right-Click Integration
+
+RoboCopyUI integrates directly into the Windows Shell context menu with custom branded icons. You don't need to manually open an app or type command prompt syntax—just right-click any file, folder, or directory:
+
+<div align="center">
+  <img src="docs/screenshots/context-menu.png" alt="Windows Explorer Right-Click Context Menu Integration" width="360px" />
+</div>
+
+- **📋 RoboCopy:** Accelerate file/folder copy operations with multi-threading into clipboard.
+- **✂️ RoboCut:** High-velocity cut and move with atomic cleanup after successful transfer.
+- **📥 RoboPaste:** Direct paste into any folder powered by the Robocopy engine.
+- **🗑️ Robocopy Delete:** Instant turbo directory purge for massive folders (deletes 100,000+ files in seconds without Windows Explorer freezing).
+
+---
+
 ## 🔥 Comparison: Windows Explorer vs RoboCopyUI
 
 | Feature | Standard Windows Copy | 🚀 RoboCopyUI |
@@ -89,7 +104,7 @@ RoboCopyUI includes an integrated theme engine supporting **Midnight (Cyber Dark
 | **Locked / In-Use Files** | ❌ Halts entire transfer with modal dialog | 🛡️ **Zero-halt retry engine (`/R:0 /W:0` customizable)** |
 | **Folder Purging / Deletion** | ⏳ Explorer freezes on deep directories | 🗑️ **Turbo RoboDelete (purges 100,000s files in seconds)** |
 | **Visual Telemetry** | 📉 Fluctuating, unreliable estimate | 📊 **Live MB/s & GB/s speed with real-time ETA** |
-| **Explorer Context Menu** | Default | 🖱️ **Right-click RoboCopy / RoboCut / RoboPaste** |
+| **Explorer Context Menu** | Standard options | 🖱️ **Native Right-Click: RoboCopy, RoboCut, RoboPaste & Robocopy Delete** |
 
 ---
 
@@ -122,6 +137,10 @@ RoboCopyUI includes an integrated theme engine supporting **Midnight (Cyber Dark
 ### 6. ⚔️ Collision Scanner & Smart Renaming
 - Pre-scans source and destination to detect file collisions before starting.
 - Options for automatic collision renaming, overwriting, or skipping.
+
+### 7. 🖱️ Windows Explorer Right-Click Context Menu
+- Full shell integration (`ShellRegistry.cs`) directly inside Windows Explorer.
+- Right-click any file, folder, or drive to instantly perform **RoboCopy**, **RoboCut**, **RoboPaste**, or **Robocopy Delete** with custom shell icons.
 
 ---
 
