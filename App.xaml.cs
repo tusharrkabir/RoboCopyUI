@@ -10,237 +10,123 @@ namespace RoboCopyUI
     /// </summary>
     public partial class App : System.Windows.Application
     {
-        private static string CleanPath(string path)
+        private void StartElevatedTransfer(string[] args)
         {
-            if (string.IsNullOrWhiteSpace(path)) return string.Empty;
-
-            // Strip outer quotes or spaces that get added by command-line parsing or escaping
-            string cleaned = path.Trim('"', ' ', '\t');
-
-            // If path is a drive letter without backslash (e.g. "E:" or "C:"), append trailing backslash
-            if (cleaned.Length == 2 && cleaned[1] == ':')
-            {
-                cleaned += "\\";
-            }
-
+            NotificationService.Suppress=true;
+            MetadataPrivilegeScope? privileges=null;
             try
             {
-                return Path.GetFullPath(cleaned);
+                if(args.Length!=3)throw new IOException(L.T("管理员任务参数无效。"));
+                using var identity=System.Security.Principal.WindowsIdentity.GetCurrent();
+                if(!new System.Security.Principal.WindowsPrincipal(identity).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
+                    throw new IOException(L.T("此单次任务未取得管理员权限，未执行传输。"));
+                var request=TaskRequestStore.ReadAndClaim(args[1],args[2]);
+                L.SetLanguage(request.Language);
+                ThemeManager.ApplyTheme(request.Theme);
+                if(request.Options.FullPreservation)privileges=new MetadataPrivilegeScope();
+                var scope=privileges;
+                Exit+=(_,_)=>scope?.Dispose();
+                var window=new MainWindow(request.Sources.ToList(),request.Destination,request.Options.IsMove,false,request.Options,true,
+                    result=>TaskRequestStore.WriteReceipt(new(request.Id,args[2],result.State,result.FullPreservation,result.Messages,DateTimeOffset.UtcNow,result.IsMove),result.Log),
+                    ()=>File.Exists(TaskRequestStore.CancelPath(request.Id)));
+                MainWindow=window;window.Show();
             }
-            catch
+            catch(Exception ex)
             {
-                return cleaned;
+                privileges?.Dispose();
+                AppDialog.Show(L.F("管理员任务未启动：{0}", ex.Message),"RoboCopyUI");
+                Shutdown(1);
             }
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        private DesktopInstance? _instance;
+        private DesktopHost? _host;
+        private Mutex? _installerGuard;
+
+        protected override async void OnStartup(StartupEventArgs e)
         {
+            _=SetCurrentProcessExplicitAppUserModelID("RoboCopyUI.Desktop");
             base.OnStartup(e);
-
-            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            _installerGuard=new Mutex(false,InstallerActions.RunningMutexName);
+            if(e.Args.Length>0&&e.Args[0] is "--configure-installation" or "--remove-installation-integration")
             {
-                var ex = args.ExceptionObject as Exception;
-                System.Diagnostics.Debug.WriteLine($"[AppDomain Unhandled Exception] {ex?.Message}");
-                try { NotificationService.ShowToast("RoboCopy UI Error", $"Fatal error: {ex?.Message}", System.Windows.Forms.ToolTipIcon.Error); } catch { }
-            };
-
-            DispatcherUnhandledException += (s, args) =>
-            {
-                System.Diagnostics.Debug.WriteLine($"[Dispatcher Unhandled Exception] {args.Exception.Message}");
-                try { NotificationService.ShowToast("RoboCopy UI Error", $"UI Error: {args.Exception.Message}", System.Windows.Forms.ToolTipIcon.Error); } catch { }
-                args.Handled = true;
-            };
-
-            var settings = UserSettings.Load();
-            ThemeManager.ApplyTheme(settings.Theme);
-
-            string[] args = e.Args;
-
-            if (args.Length == 0)
-            {
-                // Default F5 test mode: launch main copy UI with test paths
-                var copyWindow = new MainWindow(@"C:\Program Files\Adobe", @"d:\TestDest");
-                copyWindow.Show();
-                return;
+                int code=1;
+                try
+                {
+                    if(e.Args.Length>2||e.Args.Length==2&&e.Args[1]!="--purge-user-data")throw new ArgumentException(L.T("安装动作参数无效。"));
+                    code=InstallerActions.Execute(e.Args[0],e.Args.Length==2);
+                }
+                catch(Exception error)
+                {
+                    try{var log=Path.Combine(ShellRegistry.InstallRoot,"integration.log");TransferSafety.RequireNoLinks(log);File.AppendAllText(log,DateTimeOffset.Now+" "+error+Environment.NewLine);}catch{}
+                }
+                Shutdown(code);return;
             }
-
-            string flag = args[0].ToLowerInvariant();
-
-            switch (flag)
+            if(e.Args.Length>0 && e.Args[0]=="--elevated-transfer"){StartElevatedTransfer(e.Args);return;}
+            try
             {
-                case "--copy":
-                    if (args.Length >= 2)
-                    {
-                        var items = args.Skip(1)
-                            .Select(CleanPath)
-                            .Where(p => !string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p)))
-                            .ToList();
-                        if (items.Count > 0)
-                        {
-                            ClipboardManager.SetCopy(items);
-                        }
-                    }
-                    Shutdown();
-                    break;
+                var preferences=UserSettings.Load();
+                L.SetLanguage(preferences.Language);
+                if(UserSettings.LoadNotice!=null)AppDialog.Show(UserSettings.LoadNotice,"RoboCopyUI");
+                ThemeManager.ApplyTheme(preferences.Theme);
+                var request=ParseDesktopArguments(e.Args);
+                _instance=new DesktopInstance();
+                if(!_instance.IsPrimary)
+                {
+                    var response=await _instance.Send(request);
+                    if(!response.Accepted)AppDialog.Show(response.Message,"RoboCopyUI");
+                    Shutdown(response.Accepted?0:1);return;
+                }
+                ShutdownMode=ShutdownMode.OnExplicitShutdown;
+                if(request.Action!="ping")ShowShortcutNotice(preferences);
+                _host=new DesktopHost(this);_instance.Listen(command=>Task.FromResult(_host.Handle(command)));
 
-                case "--cut":
-                    if (args.Length >= 2)
-                    {
-                        var items = args.Skip(1)
-                            .Select(CleanPath)
-                            .Where(p => !string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p)))
-                            .ToList();
-                        if (items.Count > 0)
-                        {
-                            ClipboardManager.SetCut(items);
-                        }
-                    }
-                    Shutdown();
-                    break;
-
-                case "--delete":
-                    if (args.Length >= 2)
-                    {
-                        var rawItems = args.Skip(1).Select(CleanPath).Where(p => !string.IsNullOrEmpty(p));
-                        var (isMaster, allPaths) = DeleteSessionManager.RegisterAndAccumulate(rawItems);
-                        if (!isMaster)
-                        {
-                            Shutdown();
-                            return;
-                        }
-
-                        if (allPaths != null && allPaths.Count > 0)
-                        {
-                            var deleteWindow = new MainWindow(allPaths, isDelete: true);
-                            deleteWindow.Show();
-                            return;
-                        }
-                    }
-                    Shutdown();
-                    break;
-
-                case "--paste":
-                    string rawDest = args.Length >= 2 ? args[1] : string.Empty;
-                    string destDir = CleanPath(rawDest);
-                    var clip = ClipboardManager.GetClipboard();
-
-                    if (clip != null && clip.SourcePaths != null && clip.SourcePaths.Count > 0)
-                    {
-                        var validPaths = clip.SourcePaths
-                            .Select(CleanPath)
-                            .Where(p => !string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p)))
-                            .ToList();
-                        if (validPaths.Count == 0)
-                        {
-                            NotificationService.ShowToast("RoboCopy UI", "Source files/folders no longer exist.", System.Windows.Forms.ToolTipIcon.Error);
-                            Shutdown();
-                            return;
-                        }
-
-                        if (string.IsNullOrEmpty(destDir) || !Directory.Exists(destDir))
-                        {
-                            NotificationService.ShowToast("RoboCopy UI", "Invalid destination folder.", System.Windows.Forms.ToolTipIcon.Error);
-                            Shutdown();
-                            return;
-                        }
-
-                        // IMMEDIATELY CLEAR CLIPBOARD TO ENSURE CLEAN STATE AS REQUESTED
-                        ClipboardManager.Clear();
-
-                        var options = new RobocopyOptions
-                        {
-                            ThreadCount = settings.AutoSelectThreads ? 8 : settings.ThreadCount,
-                            AutoSelectThreadCount = settings.AutoSelectThreads,
-                            UnbufferedIO = settings.UnbufferedIO,
-                            PreserveTimestamps = settings.PreserveTimestamps,
-                            RetryCount = settings.RetryCount,
-                            WaitSeconds = settings.WaitSeconds,
-                            Mirror = clip.IsCutMode
-                        };
-
-                        var copyWindow = new MainWindow(validPaths, destDir, clip.IsCutMode);
-                        copyWindow.Show();
-                    }
-                    else
-                    {
-                        NotificationService.ShowToast("RoboCopy UI", "Clipboard is empty. Use 'RoboCopy' or 'RoboCut' first.", System.Windows.Forms.ToolTipIcon.Warning);
-                        Shutdown();
-                    }
-                    break;
-
-                case "--settings":
-                case "/settings":
-                    var settingsWindow = new SettingsWindow();
-                    settingsWindow.Show();
-                    break;
-
-                case "--register-shell":
-                    ShellRegistry.Register();
-                    NotificationService.ShowToast("RoboCopy UI", "Explorer context menu entries registered successfully!", System.Windows.Forms.ToolTipIcon.Info);
-                    Shutdown();
-                    break;
-
-                case "--unregister-shell":
-                    ShellRegistry.Unregister();
-                    NotificationService.ShowToast("RoboCopy UI", "Explorer context menu entries removed.", System.Windows.Forms.ToolTipIcon.Info);
-                    Shutdown();
-                    break;
-
-                case "--uninstall":
-                case "/uninstall":
-                    ShellRegistry.Unregister();
-
-                    try
-                    {
-                        using var unkey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", writable: true);
-                        unkey?.DeleteSubKeyTree("RoboCopyUI", throwOnMissingSubKey: false);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "RoboCopy Settings.lnk");
-                        if (File.Exists(desktopLnk)) File.Delete(desktopLnk);
-
-                        string startMenuLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "RoboCopy Settings.lnk");
-                        if (File.Exists(startMenuLnk)) File.Delete(startMenuLnk);
-                    }
-                    catch { }
-
-                    NotificationService.ShowToast("RoboCopy UI", "RoboCopyUI has been successfully uninstalled.", System.Windows.Forms.ToolTipIcon.Info);
-
-                    try
-                    {
-                        string appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
-                        var psi = new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = "cmd.exe",
-                            Arguments = $"/c timeout /t 2 /nobreak & rmdir /s /q \"{appDir}\"",
-                            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-                            CreateNoWindow = true
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    catch { }
-
-                    Shutdown();
-                    break;
-
-                default:
-                    if (args.Length >= 2)
-                    {
-                        string source = CleanPath(args[0]);
-                        string destination = CleanPath(args[1]);
-                        var copyWindow = new MainWindow(source, destination);
-                        copyWindow.Show();
-                    }
-                    else
-                    {
-                        var copyWindow = new MainWindow(@"C:\Program Files\Adobe", @"d:\TestDest");
-                        copyWindow.Show();
-                    }
-                    break;
+                await Task.Run(()=>DesktopSettings.Reconcile(preferences));
+                if(request.Action!="ping")
+                {
+                    var response=_host.Handle(request);
+                    if(!response.Accepted)AppDialog.Show(response.Message,"RoboCopyUI");
+                }
+            }
+            catch(Exception ex)
+            {
+                AppDialog.Show(L.F("无法确认桌面请求结果：{0}\n请先从托盘检查任务，避免重复启动。", ex.Message),"RoboCopyUI");Shutdown(1);
             }
         }
+
+        internal static void ShowShortcutNotice(UserSettings preferences)
+        {
+                if(IntegrationReadiness.Shortcuts&&!preferences.ShortcutConflictNoticeShown)
+                {
+                    var keys = preferences.Shortcuts;
+                    var disabled = L.T("已停用");
+                    AppDialog.Show(L.F("先用系统 Ctrl+C 复制或 Ctrl+X 剪切，在目标文件夹的文件列表内按以下快捷键。\n\n普通粘贴：{0}\n完整保留复制：{1}\n快速永久删除（先确认，默认取消）：{2}\n\n完整保留仅对本次粘贴生效。/ZB 先使用可重启模式，遇到访问被拒时尝试备份模式；/COPYALL 复制文件数据、属性、时间戳、权限、所有者和审核信息。目标需支持这些信息，账户也需相应权限。剪切的项目仅在移动验证成功后清理源。\n\n可在设置中改键或停用单项，也可从托盘暂停快捷键。其他软件可能占用同一组合。",keys.Paste?.Display??disabled,keys.PreservePaste?.Display??disabled,keys.PermanentDelete?.Display??disabled),L.T("RoboCopyUI 快捷键首次说明"),MessageBoxButton.OK,MessageBoxImage.Information);
+                    preferences.ShortcutConflictNoticeShown=true;preferences.Save();
+                }
+        }
+
+        private static DesktopRequest ParseDesktopArguments(string[] args)
+        {
+            var action=args.Length==0?"settings":args[0].ToLowerInvariant();
+            var paths=Array.Empty<string>();string? folder=null;
+            switch(action)
+            {
+                case "--background": action="ping";break;
+                case "--settings": action="settings";break;
+                case "settings": break;
+                case "--tasks": action="tasks";break;
+                case "--uninstall":case "/uninstall":throw new IOException(L.T("请通过安装器按清单卸载。"));
+                default:
+                    throw new IOException(L.T("命令参数无效。"));
+            }
+            var request=new DesktopRequest(1,Guid.NewGuid(),action,paths,folder);DesktopInstance.Validate(request);return request;
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            _host?.Dispose();_instance?.Dispose();_installerGuard?.Dispose();base.OnExit(e);
+        }
+        [System.Runtime.InteropServices.DllImport("shell32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int SetCurrentProcessExplicitAppUserModelID(string identifier);
     }
 }

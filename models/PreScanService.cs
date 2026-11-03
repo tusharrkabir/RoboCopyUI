@@ -106,6 +106,7 @@ namespace RoboCopyUI
         {
             if (isCancelled?.Invoke() == true || !Directory.Exists(currentSourceDir))
                 return;
+            if ((File.GetAttributes(currentSourceDir) & FileAttributes.ReparsePoint) != 0) return;
 
             try
             {
@@ -113,6 +114,7 @@ namespace RoboCopyUI
                 foreach (var sourceFile in files)
                 {
                     if (isCancelled?.Invoke() == true) return;
+                    if ((File.GetAttributes(sourceFile) & FileAttributes.ReparsePoint) != 0) continue;
 
                     if (excludeSet.Contains(Path.GetFullPath(sourceFile)))
                         continue;
@@ -164,7 +166,7 @@ namespace RoboCopyUI
             if (!File.Exists(destFile))
                 return true;
 
-            if (options.Mirror || forceOverwriteSame)
+            if (forceOverwriteSame)
                 return true;
 
             try
@@ -175,7 +177,7 @@ namespace RoboCopyUI
                 if (sourceInfo.Length != destInfo.Length)
                     return true;
 
-                if (Math.Abs((sourceInfo.LastWriteTimeUtc - destInfo.LastWriteTimeUtc).TotalSeconds) > 2)
+                if (sourceInfo.LastWriteTimeUtc != destInfo.LastWriteTimeUtc)
                     return true;
 
                 return false;

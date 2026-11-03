@@ -1,4 +1,5 @@
 ## Visual Studio build and cache folders
+artifacts/
 .vs/
 [Bb]in/
 [Oo]bj/

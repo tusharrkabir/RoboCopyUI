@@ -12,7 +12,7 @@ namespace RoboCopyUI
             if (batch.IsDirectoryCopy)
             {
                 // 1. If target directory itself exists
-                if (Directory.Exists(batch.DestDir))
+                if (Directory.Exists(batch.DestDir) || File.Exists(batch.DestDir))
                 {
                     string folderName = Path.GetFileName(batch.DestDir.TrimEnd('\\', '/'));
                     if (string.IsNullOrEmpty(folderName)) folderName = batch.DisplayName;
@@ -24,18 +24,6 @@ namespace RoboCopyUI
                         SourceFullPath = batch.SourceDir,
                         DestFullPath = batch.DestDir
                     });
-                }
-                else
-                {
-                    // 2. Check top-level items inside source vs parent destination
-                    if (Directory.Exists(batch.SourceDir))
-                    {
-                        var parentDest = Path.GetDirectoryName(batch.DestDir.TrimEnd('\\', '/')) ?? batch.DestDir;
-                        if (Directory.Exists(parentDest))
-                        {
-                            result.AddRange(FindTopLevelCollisions(batch.SourceDir, parentDest));
-                        }
-                    }
                 }
             }
             else
@@ -53,7 +41,7 @@ namespace RoboCopyUI
                             result.Add(new CollisionEntry
                             {
                                 Name = spec,
-                                IsDirectory = Directory.Exists(destFile),
+                                IsDirectory = false,
                                 SourceFullPath = sourceFile,
                                 DestFullPath = destFile
                             });

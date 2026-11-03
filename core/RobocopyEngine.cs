@@ -11,13 +11,15 @@ namespace RoboCopyUI
     public class RobocopyOptions
     {
         public string FileMask { get; set; } = "*.*";
-        public bool Mirror { get; set; } = false; // IsCutMode / Mirror
-        public int RetryCount { get; set; } = 0;
-        public int WaitSeconds { get; set; } = 0;
+        public bool IsMove { get; set; }
+        public bool FullPreservation { get; set; }
+        public int RetryCount { get; set; } = 3;
+        public int WaitSeconds { get; set; } = 5;
         public int ThreadCount { get; set; } = 8;
         public bool AutoSelectThreadCount { get; set; } = true;
         public bool UnbufferedIO { get; set; } = false;
         public bool PreserveTimestamps { get; set; } = true;
+        public RobocopyOptions Snapshot() => (RobocopyOptions)MemberwiseClone();
     }
 
     public class RobocopyEngine : IDisposable
@@ -28,8 +30,11 @@ namespace RoboCopyUI
         private readonly CopyProgress _progress = new CopyProgress();
         public CopyProgress Progress => _progress;
 
-        private bool _cancelRequested;
+        private volatile bool _cancelRequested;
         private bool _completedFired;
+        private bool _failed;
+        private int _started;
+        public List<string> Results { get; } = new();
 
         private PendingFileTable? _pending;
         private InFlightSet? _inFlight;
@@ -38,7 +43,6 @@ namespace RoboCopyUI
 
         private AccurateProgressTracker? _accurateProgress;
         private PreScanResult _preScanResult = new PreScanResult();
-        private RoboDeleteRunner? _deleteRunner;
 
         private TaskCompletionSource<CollisionChoice>? _pendingCollisionChoice;
         public event EventHandler<List<CollisionEntry>>? CollisionsDetected;
@@ -63,64 +67,61 @@ namespace RoboCopyUI
 
         public void StartDelete(List<string> targetPaths, RobocopyOptions? options = null)
         {
-            try
-            {
-                _deleteRunner = new RoboDeleteRunner();
-                _deleteRunner.ProgressChanged += (s, p) =>
-                {
-                    _progress.BytesCopied = p.BytesCopied;
-                    _progress.BytesTotal = p.BytesTotal;
-                    _progress.FilesCopied = p.FilesCopied;
-                    _progress.FilesTotal = p.FilesTotal;
-                    _progress.SpeedBytesPerSecond = p.SpeedBytesPerSecond;
-                    _progress.AverageSpeedBytesPerSecond = p.AverageSpeedBytesPerSecond;
-                    _progress.PeakSpeedBytesPerSecond = p.PeakSpeedBytesPerSecond;
-                    _progress.Elapsed = p.Elapsed;
-                    _progress.Remaining = p.Remaining;
-                    _progress.CurrentFileName = p.CurrentFileName;
-                    ProgressChanged?.Invoke(this, p);
-                };
-                _deleteRunner.StatusChanged += (s, st) => StatusChanged?.Invoke(this, st);
-                _deleteRunner.ThreadCountChanged += (s, th) => ThreadCountChanged?.Invoke(this, th);
-                _deleteRunner.FileChanged += (s, f) => FileChanged?.Invoke(this, f);
-                _deleteRunner.SkippedFileFound += (s, sk) =>
-                {
-                    _progress.SkippedFiles.Add(sk);
-                    SkippedFileFound?.Invoke(this, sk);
-                };
-                _deleteRunner.Error += (s, err) => Error?.Invoke(this, err);
-                _deleteRunner.Completed += (s, e) => Completed?.Invoke(this, e);
-                _deleteRunner.Cancelled += (s, e) => Cancelled?.Invoke(this, e);
-
-                _deleteRunner.Run(targetPaths, options ?? new RobocopyOptions());
-            }
-            catch (Exception ex)
-            {
-                Error?.Invoke(this, $"StartDelete failed: {ex.Message}");
-                StatusChanged?.Invoke(this, CopyState.Error);
-            }
+            // The old mirror-delete runner has no per-item confirmation or safe scope checks.
+            // Keep this compatibility API closed until the Shell deletion path passes acceptance.
+            Error?.Invoke(this, L.T("旧版高速删除入口已停用；永久删除须通过新的确认与范围验收。"));
+            StatusChanged?.Invoke(this, CopyState.Error);
+            return;
         }
 
         public void Start(List<string> sourcePaths, string destination, RobocopyOptions? options = null)
         {
+            if(System.Threading.Interlocked.Exchange(ref _started,1)!=0)
+                throw new InvalidOperationException(L.T("每个传输引擎只能运行一个任务；重试必须新建任务快照。"));
             try
             {
-                RunStart(sourcePaths, destination, options ?? new RobocopyOptions());
+                if(_cancelRequested)throw new OperationCanceledException();
+                var frozenPaths = sourcePaths.Select(TransferSafety.Normalize).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                if (frozenPaths.Any(p => !File.Exists(p) && !Directory.Exists(p)))
+                    throw new IOException(L.T("部分源已不存在；没有执行任务。"));
+                RunStart(frozenPaths, TransferSafety.Normalize(destination), (options ?? new RobocopyOptions()).Snapshot());
+            }
+            catch (OperationCanceledException)
+            {
+                _cancelRequested=true;
+                OnAllBatchesCompleted();
             }
             catch (Exception ex)
             {
+                _failed = true;
                 Error?.Invoke(this, $"Start failed: {ex.Message}");
-                StatusChanged?.Invoke(this, CopyState.Error);
+                OnAllBatchesCompleted();
             }
         }
 
         private void RunStart(List<string> sourcePaths, string destination, RobocopyOptions options)
         {
-            _cancelRequested = false;
             _completedFired = false;
+            _failed = false;
+            Results.Clear();
             StatusChanged?.Invoke(this, CopyState.Scanning);
 
             var initialBatches = RobocopyBatchItem.CreateBatches(sourcePaths, destination);
+            TransferSafety.Validate(initialBatches,()=>_cancelRequested);
+            if(options.FullPreservation)
+            {
+                var volume=VolumeCapabilities.Read(destination);
+                if(!volume.PreservesAcl)throw new IOException(L.F("目标文件系统 {0} 不支持 Windows 权限，无法完整保留。源未清理；可为本次任务选择普通复制。", volume.FileSystem));
+            }
+            // Freeze before collision UI, scans or child processes touch the destination.
+            var manifests = initialBatches.ToDictionary(b => b, b => TransferSafety.Freeze(b, () => _cancelRequested,options.IsMove));
+            foreach (var warning in manifests.Values.SelectMany(m => m.Warnings))
+            {
+                Results.Add(warning);
+                // Copying can proceed, but the task must not be presented as fully complete.
+                _failed = true;
+                Error?.Invoke(this, warning);
+            }
             if (initialBatches.Count == 0)
             {
                 StatusChanged?.Invoke(this, CopyState.Completed);
@@ -129,13 +130,14 @@ namespace RoboCopyUI
             }
 
             var excludeFromCopy = new List<CollisionEntry>();
+            bool hasSkipped = false;
             bool forceOverwriteSame = false;
 
             // 1. Single consolidated collision scan across ALL batches up front
             var allCollisions = new List<CollisionEntry>();
             foreach (var batch in initialBatches)
             {
-                if (_cancelRequested) return;
+                if (_cancelRequested) throw new OperationCanceledException();
                 var collisions = CollisionScanner.FindCollisions(batch);
                 allCollisions.AddRange(collisions);
             }
@@ -144,13 +146,15 @@ namespace RoboCopyUI
             {
                 var tcs = new TaskCompletionSource<CollisionChoice>();
                 _pendingCollisionChoice = tcs;
+                if(CollisionsDetected==null)throw new IOException(L.T("存在冲突，需要明确选择处理方式；未执行传输。"));
                 CollisionsDetected?.Invoke(this, allCollisions);
 
                 var choice = tcs.Task.Result;
-                if (_cancelRequested) return;
+                if (_cancelRequested) throw new OperationCanceledException();
 
                 if (choice == CollisionChoice.Skip)
                 {
+                    hasSkipped = true;
                     excludeFromCopy.AddRange(allCollisions);
                 }
                 else if (choice == CollisionChoice.Rename)
@@ -158,7 +162,8 @@ namespace RoboCopyUI
                     foreach (var entry in allCollisions)
                     {
                         if (_cancelRequested) break;
-                        CollisionRenamer.RenameAndCopy(entry, options);
+                        var target = CollisionRenamer.RenameAndCopy(entry, options, () => _cancelRequested, Results.Add);
+                        foreach(var manifest in manifests.Values)manifest.RemapTarget(entry.SourceFullPath,target);
                     }
                     excludeFromCopy.AddRange(allCollisions);
                 }
@@ -188,6 +193,10 @@ namespace RoboCopyUI
                 foreach (var batch in batches)
                 {
                     if (_cancelRequested) break;
+
+                    if (batch.IsDirectoryCopy && excludeFromCopy.Any(e =>
+                        string.Equals(e.SourceFullPath, batch.SourceDir, StringComparison.OrdinalIgnoreCase)))
+                        continue;
                     try
                     {
                         var scan = ScanService.Scan(batch, options, excludeFromCopy, forceOverwriteSame, () => _cancelRequested);
@@ -235,16 +244,6 @@ namespace RoboCopyUI
                 _progress.BytesTotal = Math.Max(1, _preScanResult.TotalBytesToCopy);
                 _progress.FilesTotal = Math.Max(1, _preScanResult.TotalFilesToCopy);
 
-                if (_preScanResult.TotalBytesToCopy <= 0 && batches.All(b => !b.IsDirectoryCopy))
-                {
-                    _accurateProgress?.ForceComplete();
-                    _progress.BytesTotal = 1;
-                    _progress.BytesCopied = 1;
-                    StatusChanged?.Invoke(this, CopyState.Completed);
-                    Completed?.Invoke(this, EventArgs.Empty);
-                    return;
-                }
-
                 if (options.AutoSelectThreadCount)
                 {
                     // Auto-detect storage hardware (HDD vs SSD vs NVMe) and optimize threads & buffer
@@ -285,19 +284,15 @@ namespace RoboCopyUI
                     if (_cancelRequested) break;
 
                     _stdoutParser?.SetSourceRoot(batch.SourceDir);
+                    if (batch.IsDirectoryCopy && excludeFromCopy.Any(e =>
+                        string.Equals(e.SourceFullPath, batch.SourceDir, StringComparison.OrdinalIgnoreCase)))
+                        continue;
 
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = "robocopy.exe",
-                        Arguments = RobocopyCommandBuilder.BuildArguments(
-                            batch, options, listOnly: false, excludeFromCopy, forceOverwriteSame),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
+                    var startInfo = RobocopyCommandBuilder.CreateStartInfo(batch, options, false, excludeFromCopy, forceOverwriteSame);
 
                     try
                     {
+                        var outputLog = new System.Text.StringBuilder();
                         _process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
                         var tcsExited = new TaskCompletionSource<bool>();
@@ -326,6 +321,7 @@ namespace RoboCopyUI
                                             {
                                                 string line = sb.ToString();
                                                 sb.Clear();
+                                                if (outputLog.Length < 131072) outputLog.AppendLine(line);
                                                 ProcessOutputLine(line);
                                             }
                                         }
@@ -354,19 +350,43 @@ namespace RoboCopyUI
                             tcsExited.Task.Wait(200);
                         }
 
-                        Task.WaitAny(readerTask, Task.Delay(500));
+                        _process.WaitForExit();
+                        readerTask.GetAwaiter().GetResult();
 
                         _telemetry?.OnBatchCompleted();
 
-                        // Perform Cut cleanup for files/folders after successful copy
-                        if (options.Mirror && !_cancelRequested && _process.ExitCode < 16)
+                        Results.Add($"{batch.SourceDir} → {batch.DestDir}; exit={_process.ExitCode}; {string.Join(" ", startInfo.ArgumentList)}\n{outputLog}");
+                        if (_process.ExitCode >= 8)
                         {
-                            PerformCutCleanup(batch);
+                            _failed = true;
+                            Error?.Invoke(this, L.F("复制失败（退出码 {0}），源保留。已复制内容可能仍在目标：{1}\n{2}", _process.ExitCode, batch.DestDir, outputLog));
+                            break;
                         }
                     }
                     catch (Exception ex)
                     {
+                        _failed = true;
                         Error?.Invoke(this, $"Robocopy error: {ex.Message}");
+                        break;
+                    }
+                }
+                // Never clean earlier batches if a later batch failed/cancelled.
+                if (options.IsMove && !_cancelRequested && !_failed)
+                {
+                    if (hasSkipped)
+                    {
+                        _failed = true;
+                        Error?.Invoke(this, L.T("有跳过的冲突项目；已复制内容保留在目标，本次源全部保留供核对。"));
+                    }
+                    else foreach (var manifest in manifests.Values)
+                    {
+                        var problems = manifest.CleanVerifiedSources(options.FullPreservation, () => _cancelRequested);
+                        if (problems.Count > 0)
+                        {
+                            _failed = true;
+                            Error?.Invoke(this, string.Join(Environment.NewLine, problems));
+                            break;
+                        }
                     }
                 }
             }
@@ -375,47 +395,6 @@ namespace RoboCopyUI
             }
 
             OnAllBatchesCompleted();
-        }
-
-        private void PerformCutCleanup(RobocopyBatchItem batch)
-        {
-            try
-            {
-                if (batch.IsDirectoryCopy)
-                {
-                    if (Directory.Exists(batch.SourceDir))
-                    {
-                        Directory.Delete(batch.SourceDir, recursive: true);
-                    }
-                }
-                else
-                {
-                    foreach (var spec in batch.FileSpecs)
-                    {
-                        string file = Path.Combine(batch.SourceDir, spec);
-                        if (File.Exists(file))
-                        {
-                            File.Delete(file);
-                        }
-                    }
-                }
-            }
-            catch { }
-        }
-
-        private void PerformCutCleanup(IEnumerable<string> sourcePaths)
-        {
-            foreach (var path in sourcePaths)
-            {
-                try
-                {
-                    if (Directory.Exists(path))
-                        Directory.Delete(path, recursive: true);
-                    else if (File.Exists(path))
-                        File.Delete(path);
-                }
-                catch { }
-            }
         }
 
         private void ProcessOutputLine(string data)
@@ -454,6 +433,13 @@ namespace RoboCopyUI
                 return;
             }
 
+            if (_failed)
+            {
+                _telemetry?.Stop();
+                StatusChanged?.Invoke(this, CopyState.Error);
+                return;
+            }
+
             _accurateProgress?.ForceComplete();
             _telemetry?.Publish();
             _telemetry?.Stop();
@@ -463,7 +449,6 @@ namespace RoboCopyUI
 
         public void Pause()
         {
-            _deleteRunner?.Pause();
 
             if (_process == null || _process.HasExited) return;
 
@@ -480,7 +465,6 @@ namespace RoboCopyUI
 
         public void Resume()
         {
-            _deleteRunner?.Resume();
 
             if (_process == null || _process.HasExited) return;
 
@@ -501,8 +485,8 @@ namespace RoboCopyUI
 
         public void Cancel()
         {
+            if(_completedFired)return;
             _cancelRequested = true;
-            _deleteRunner?.Cancel();
             _pendingCollisionChoice?.TrySetResult(CollisionChoice.Skip); // Unblock if waiting on collision resolution
 
             try
@@ -517,14 +501,12 @@ namespace RoboCopyUI
             catch { }
 
             _telemetry?.Stop();
-            StatusChanged?.Invoke(this, CopyState.Cancelled);
-            Cancelled?.Invoke(this, EventArgs.Empty);
+            // The worker reports one terminal state after its child process and readers stop.
         }
 
         public void Dispose()
         {
             _cancelRequested = true;
-            _deleteRunner?.Dispose();
             _pendingCollisionChoice?.TrySetResult(CollisionChoice.Skip);
             _telemetry?.Stop();
             _stopwatch?.Stop();

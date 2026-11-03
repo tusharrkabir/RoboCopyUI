@@ -18,7 +18,7 @@ namespace RoboCopyUI
                 _ => "DarkTheme.xaml"
             };
 
-            return new Uri($"/Themes/{file}", UriKind.Relative);
+            return new Uri($"/RoboCopyUI;component/Themes/{file}", UriKind.Relative);
         }
 
         public static void ApplyTheme(string themeName)

@@ -25,15 +25,7 @@ namespace RoboCopyUI
         {
             var result = new ScanResult();
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "robocopy.exe",
-                Arguments = RobocopyCommandBuilder.BuildArguments(
-                    batch, options, listOnly: true, excludeTopLevel, forceOverwriteSame),
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            var startInfo = RobocopyCommandBuilder.CreateStartInfo(batch, options, true, excludeTopLevel, forceOverwriteSame);
 
             using var scanProcess = new Process { StartInfo = startInfo };
             scanProcess.Start();
@@ -78,6 +70,7 @@ namespace RoboCopyUI
             }
 
             scanProcess.WaitForExit();
+            if (scanProcess.ExitCode >= 8) throw new IOException(L.F("预检失败：退出码 {0}", scanProcess.ExitCode));
             return result;
         }
 
