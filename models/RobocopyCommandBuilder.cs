@@ -1,77 +1,65 @@
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
+using System.IO;
 
-namespace RoboCopyUI
+namespace RoboCopyUI;
+
+public static class RobocopyCommandBuilder
 {
-    public static class RobocopyCommandBuilder
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern uint GetOEMCP();
+    public static string FormatRobocopyPath(string path) => Quote(Path.GetFullPath(path));
+    private static string Quote(string value) => "\"" + value.TrimEnd('\\') + (value.EndsWith('\\') ? "\\\\" : "") + "\"";
+
+    public static IReadOnlyList<string> BuildArgumentList(RobocopyBatchItem batch, RobocopyOptions options,
+        bool listOnly, List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false)
     {
-        public static string FormatRobocopyPath(string path)
+        var args = new List<string> { Path.GetFullPath(batch.SourceDir), Path.GetFullPath(batch.DestDir) };
+        args.AddRange(batch.FileSpecs.Count > 0 ? batch.FileSpecs : [options.FileMask]);
+        if (batch.IsDirectoryCopy) args.Add("/E");
+        args.AddRange(["/BYTES", "/FP", "/NJH", "/NJS", "/NDL", "/NC", "/NP", "/XJ", "/XJD", "/XJF",
+            $"/R:{(listOnly ? 0 : options.RetryCount)}", $"/W:{(listOnly ? 0 : options.WaitSeconds)}", $"/MT:{options.ThreadCount}"]);
+        if (options.UnbufferedIO) args.Add("/J");
+        if (options.FullPreservation) args.AddRange(["/ZB", "/COPYALL", "/DCOPY:DAT"]);
+        else args.Add(options.PreserveTimestamps ? "/DCOPY:T" : "/NODCOPY");
+        if (forceOverwriteSame) args.AddRange(["/IS", "/IT"]);
+        if (excludedEntries != null)
         {
-            if (string.IsNullOrWhiteSpace(path)) return "\"\"";
-            string fullPath = System.IO.Path.GetFullPath(path).TrimEnd('\\') + "\\";
-            // Ensure trailing backslash escapes itself when quoted
-            return $"\"{fullPath}\\\"";
+            var files = excludedEntries.Where(e => !e.IsDirectory).Select(e => e.SourceFullPath).ToList();
+            var dirs = excludedEntries.Where(e => e.IsDirectory).Select(e => e.SourceFullPath).ToList();
+            if (files.Count > 0) { args.Add("/XF"); args.AddRange(files); }
+            if (dirs.Count > 0) { args.Add("/XD"); args.AddRange(dirs); }
         }
+        if (listOnly) args.Add("/L");
+        return args;
+    }
 
-        public static string BuildArguments(
-            RobocopyBatchItem batch, RobocopyOptions options, bool listOnly,
-            List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false)
+    public static ProcessStartInfo CreateStartInfo(RobocopyBatchItem batch, RobocopyOptions options,
+        bool listOnly, List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false)
+    {
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        var start = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "robocopy.exe"))
         {
-            string fileSpecs = (batch.FileSpecs != null && batch.FileSpecs.Count > 0)
-                ? string.Join(" ", batch.FileSpecs.Select(f => $"\"{f}\""))
-                : $"\"{options.FileMask}\"";
+            RedirectStandardOutput = true, StandardOutputEncoding = System.Text.Encoding.GetEncoding((int)GetOEMCP()),
+            UseShellExecute = false, CreateNoWindow = true
+        };
+        foreach (var arg in BuildArgumentList(batch, options, listOnly, excludedEntries, forceOverwriteSame))
+            start.ArgumentList.Add(arg);
+        return start;
+    }
 
-            // Crucial: Only apply recursive /E or /MIR flags for directory copies.
-            // File copies must NOT include /E or /MIR to prevent copying unrelated files or desktop.ini.
-            string flags = batch.IsDirectoryCopy ? (options.Mirror ? "/MIR" : "/E") : "";
+    public static string BuildArguments(RobocopyBatchItem batch, RobocopyOptions options, bool listOnly,
+        List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false) =>
+        string.Join(" ", BuildArgumentList(batch, options, listOnly, excludedEntries, forceOverwriteSame)
+            .Select(a => a.StartsWith('/') ? a : Quote(a)));
 
-            string sourceArg = FormatRobocopyPath(batch.SourceDir);
-            string destArg = FormatRobocopyPath(batch.DestDir);
-
-            var args = $"{sourceArg} {destArg} {fileSpecs} " +
-                       $"{flags} /BYTES /FP /NJH /NJS /NDL /NC /NP /FFT /IPG:0 " +
-                       $"/R:{options.RetryCount} /W:{options.WaitSeconds} /MT:{options.ThreadCount}";
-
-            if (options.UnbufferedIO)
-                args += " /J";
-
-            if (options.PreserveTimestamps)
-                args += " /DCOPY:T"; // T only copies timestamps. Prevents copying hidden/system attributes to destination folders.
-            else
-                args += " /NODCOPY"; // Disables directory info copying (prevents default DA which copies attributes).
-
-            if (forceOverwriteSame)
-                args += " /IS /IT";
-
-            if (excludedEntries != null && excludedEntries.Count > 0)
-            {
-                var files = excludedEntries.Where(e => !e.IsDirectory).Select(e => $"\"{e.Name}\"").ToList();
-                var dirs = excludedEntries.Where(e => e.IsDirectory).Select(e => $"\"{e.Name}\"").ToList();
-
-                if (files.Count > 0) args += $" /XF {string.Join(" ", files)}";
-                if (dirs.Count > 0) args += $" /XD {string.Join(" ", dirs)}";
-            }
-
-            if (listOnly)
-                args += " /L";
-
-            return args;
-        }
-
-        public static string BuildArguments(
-            string source, string destination, RobocopyOptions options, bool listOnly,
-            List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false)
+    public static string BuildArguments(string source, string destination, RobocopyOptions options, bool listOnly,
+        List<CollisionEntry>? excludedEntries = null, bool forceOverwriteSame = false)
+    {
+        bool directory = Directory.Exists(source);
+        return BuildArguments(new RobocopyBatchItem
         {
-            bool isDir = System.IO.Directory.Exists(source);
-            var batch = new RobocopyBatchItem
-            {
-                SourceDir = isDir ? source : (System.IO.Path.GetDirectoryName(source) ?? source),
-                DestDir = destination,
-                FileSpecs = isDir ? new List<string> { options.FileMask } : new List<string> { System.IO.Path.GetFileName(source) },
-                IsDirectoryCopy = isDir
-            };
-
-            return BuildArguments(batch, options, listOnly, excludedEntries, forceOverwriteSame);
-        }
+            SourceDir = directory ? source : Path.GetDirectoryName(source)!, DestDir = destination,
+            FileSpecs = directory ? [options.FileMask] : [Path.GetFileName(source)], IsDirectoryCopy = directory
+        }, options, listOnly, excludedEntries, forceOverwriteSame);
     }
 }

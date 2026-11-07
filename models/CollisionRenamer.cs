@@ -1,63 +1,59 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 
-namespace RoboCopyUI
+namespace RoboCopyUI;
+
+public static class CollisionRenamer
 {
-    // Robocopy has no "copy but rename if it already exists" flag — so
-    // entries chosen for Rename are excluded from the main copy and handled
-    // here instead: one at a time, into a uniquely suffixed destination name.
-    // Runs synchronously BEFORE the main copy starts (on the same background
-    // thread Start() already runs on) — not part of live telemetry, since
-    // these are the exceptional few items that actually collided, not the
-    // bulk of the job.
-    public static class CollisionRenamer
+    public static string RenameAndCopy(CollisionEntry entry, RobocopyOptions options, Func<bool>? cancelled = null, Action<string>? report = null)
     {
-        public static void RenameAndCopy(CollisionEntry entry, RobocopyOptions options)
+        var destination = ReserveUniquePath(entry.DestFullPath,entry.IsDirectory);
+        var staging = Path.Combine(Path.GetDirectoryName(destination)!, ".robocopyui-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(staging);
+        var batch = new RobocopyBatchItem
         {
-            var uniqueDest = ReserveUniquePath(entry.DestFullPath);
-
-            if (!entry.IsDirectory)
+            SourceDir = entry.IsDirectory ? entry.SourceFullPath : Path.GetDirectoryName(entry.SourceFullPath)!,
+            DestDir = staging,
+            FileSpecs = entry.IsDirectory ? ["*.*"] : [Path.GetFileName(entry.SourceFullPath)],
+            IsDirectoryCopy = entry.IsDirectory
+        };
+        TransferSafety.Validate([batch]);
+        var startInfo = RobocopyCommandBuilder.CreateStartInfo(batch, options, false);
+        using var process = Process.Start(startInfo) ?? throw new IOException(L.T("无法启动 Robocopy。"));
+        var output = process.StandardOutput.ReadToEndAsync();
+        while (!process.WaitForExit(100))
+        {
+            if (cancelled?.Invoke() == true)
             {
-                File.Copy(entry.SourceFullPath, uniqueDest, overwrite: false);
-                return;
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit();
+                throw new OperationCanceledException(L.F("保留两份已取消；未清源。临时内容：{0}", staging));
             }
-
-            // Directory: a dedicated robocopy call straight into the unique
-            // folder, reusing the same options (thread count, retry policy).
-            var args = RobocopyCommandBuilder.BuildArguments(
-                entry.SourceFullPath, uniqueDest, options, listOnly: false);
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "robocopy.exe",
-                Arguments = args,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo);
-            process.StandardOutput.ReadToEnd(); // drained, not parsed — not tracked
-            process.WaitForExit();
         }
-
-        private static string ReserveUniquePath(string path)
+        var log = output.GetAwaiter().GetResult();
+        report?.Invoke($"{batch.SourceDir} → {batch.DestDir}; exit={process.ExitCode}; {string.Join(" ",startInfo.ArgumentList)}\n{log}");
+        if (process.ExitCode >= 8)
+            throw new IOException(L.F("保留两份失败（{0}）；源保留。临时内容：{1}\n{2}", process.ExitCode, staging, log));
+        if (cancelled?.Invoke() == true) throw new OperationCanceledException(L.T("保留两份已取消，源保留。"));
+        // Atomic no-overwrite rename on the target volume; a competing task cannot be merged into.
+        if (entry.IsDirectory) Directory.Move(staging, destination);
+        else
         {
-            if (!File.Exists(path) && !Directory.Exists(path)) return path;
+            File.Move(Path.Combine(staging, Path.GetFileName(entry.SourceFullPath)), destination, overwrite: false);
+            Directory.Delete(staging, recursive: false);
+        }
+        return destination;
+    }
 
-            var dir = Path.GetDirectoryName(path);
-            var name = Path.GetFileNameWithoutExtension(path);
-            var ext = Path.GetExtension(path); // empty for directories
-            int suffix = 1;
-            string candidate;
-
-            do
-            {
-                candidate = Path.Combine(dir, $"{name} ({suffix}){ext}");
-                suffix++;
-            } while (File.Exists(candidate) || Directory.Exists(candidate));
-
-            return candidate;
+    private static string ReserveUniquePath(string path,bool isDirectory)
+    {
+        var directory = Path.GetDirectoryName(path)!;
+        var name = isDirectory ? Path.GetFileName(path) : Path.GetFileNameWithoutExtension(path);
+        var extension = isDirectory ? string.Empty : Path.GetExtension(path);
+        for (var suffix = 1; ; suffix++)
+        {
+            var candidate = Path.Combine(directory, $"{name} ({suffix}){extension}");
+            if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
         }
     }
 }

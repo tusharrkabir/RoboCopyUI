@@ -6,168 +6,216 @@
 
 ### *Next-Gen, Ultra-Fast Multi-Threaded File Transfer GUI for Windows*
 
-[![Peak Speed](https://img.shields.io/badge/Peak%20Velocity-2.0%20GB%2Fs-FF0055?style=for-the-badge&logo=speedtest&logoColor=white)](https://github.com/tusharrkabir/RoboCopyUI)
-[![Max Threads](https://img.shields.io/badge/Multi--Threading-Up%20to%20128%20Threads-00E5FF?style=for-the-badge&logo=cpu&logoColor=white)](https://github.com/tusharrkabir/RoboCopyUI)
+[![Max Threads](https://img.shields.io/badge/Multi--Threading-Up%20to%20128%20Threads-00E5FF?style=for-the-badge&logo=cpu&logoColor=white)](#-key-features-breakdown)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![Version](https://img.shields.io/badge/Version-1.7.0-brightgreen?style=for-the-badge)](https://github.com/tusharrkabir/RoboCopyUI)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#-tech-stack--requirements)
+[![Version](https://img.shields.io/badge/Version-1.7.3-brightgreen?style=for-the-badge)](https://github.com/Snowail/RoboCopyUI/releases/tag/v1.7.3)
+[![Languages](https://img.shields.io/badge/Languages-English%20%7C%20简体中文-FF8C42?style=for-the-badge)](#-languages--personalization)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 <br/>
 
-**RoboCopyUI** transforms Windows' enterprise-grade command-line tool (`robocopy.exe`) into an ultra-sleek, modern cyberpunk desktop utility. Built to unleash the raw, unthrottled read/write bandwidth of modern NVMe SSDs and destroy the notorious Windows Explorer slowdowns on millions of tiny files.
+**RoboCopyUI** transforms Windows' enterprise-grade command-line tool (`robocopy.exe`) into an ultra-sleek, modern cyberpunk desktop utility. Put multi-threaded transfers, live progress, and configurable copy settings one keyboard shortcut away.
+
+**📋 Copy with Ctrl+C · ✂️ Cut with Ctrl+X · 🚀 Paste with RoboCopyUI**
+
+[⬇️ **Download 1.7.3 — Windows 11 x64 Installer**](https://github.com/Snowail/RoboCopyUI/releases/download/v1.7.3/RoboCopyUI-1.7.3-win-x64-setup.exe)
 
 </div>
 
 ---
 
-## ⚡ Peak Velocity Showcase (2.0 GB/s)
+## 📦 Download & Install
 
-> **5 GB transferred in ~2 seconds flat!** Direct disk saturation achieving sustained **2.0 GB/s transfer speed** with real-time dynamic countdown ETA.
+Get the **complete Windows 11 x64 installer** from this fork's release page. It includes the .NET 10 desktop runtime, so you can install and start using RoboCopyUI right away.
+
+| 📥 Download | 📄 Details |
+| :--- | :--- |
+| [🚀 Windows x64 Installer](https://github.com/Snowail/RoboCopyUI/releases/download/v1.7.3/RoboCopyUI-1.7.3-win-x64-setup.exe) | RoboCopyUI 1.7.3 with the desktop runtime included |
+| [📦 Release Page](https://github.com/Snowail/RoboCopyUI/releases/tag/v1.7.3) | Release information and downloadable files |
+| [🔎 SHA-256 Checksums](https://github.com/Snowail/RoboCopyUI/releases/download/v1.7.3/SHA256SUMS.json) | Verify your downloaded installer |
+
+1. **📥 Download** and run the installer. This build is unsigned.
+2. **⚙️ Open RoboCopyUI** from Start and read the first-run shortcut guide.
+3. **📌 Find the tray icon** near the clock. Open settings, view tasks, pause shortcuts, or exit from here.
+4. **📁 Open File Explorer** and use the copy-and-paste steps below.
+
+The app installs for the current user. Before an upgrade, exit RoboCopyUI from the tray and wait for active tasks to finish.
+
+---
+
+## ⌨️ File Explorer Shortcuts — Copy, Cut & Paste
+
+**Start with Windows' own Ctrl+C or Ctrl+X.** RoboCopyUI reads the files and copy/cut intent from the system clipboard when you invoke its paste shortcut.
+
+### 📋 Copy Files & Folders
+
+1. In **File Explorer**, select the files or folders you want to copy.
+2. Press **Ctrl+C** to put that selection on the Windows clipboard.
+3. Open the **destination folder** and click inside its **file list**.
+4. Press **Ctrl+Alt+V** to start a RoboCopyUI copy.
+5. Follow the transfer in the progress window. The originals stay in the source folder.
+
+### ✂️ Move Files & Folders
+
+1. In **File Explorer**, select the files or folders you want to move.
+2. Press **Ctrl+X** to mark that selection for moving.
+3. Open the **destination folder** and click inside its **file list**.
+4. Press **Ctrl+Alt+V** to start a RoboCopyUI move.
+5. Source cleanup follows successful copying and verification. Review the task window if any items remain.
+
+### 🛡️ Choose Full Preservation for This Paste
+
+Use **Ctrl+C** or **Ctrl+X** first, navigate to the destination, then press **Ctrl+Alt+Shift+V**.
+
+This requests **full preservation for that one paste**. The clipboard still determines whether the operation copies or moves the selection.
+
+| 🧩 Option | 📂 What it does |
+| :--- | :--- |
+| `/ZB` | Uses restartable copying and attempts backup mode if access is denied |
+| `/COPYALL` | Requests file data, attributes, timestamps, permissions, ownership, and auditing information |
+| `/DCOPY:DAT` | Requests directory data, attributes, and timestamps |
+| `/E` | Includes subdirectories and empty directories when copying a selected folder |
+
+The destination must support the requested metadata, and your account needs the required permissions. If full preservation fails, the task window explains the error and offers the applicable retry options.
+
+### 🗑️ Permanently Delete a Selection
+
+Select the items in File Explorer and press **Ctrl+Alt+D**. Review the selection and confirm deletion. **Cancel is selected by default**, and confirmed deletion skips the Recycle Bin.
+
+### 🎯 Shortcut Reference
+
+| Shortcut | Action |
+| :--- | :--- |
+| **Ctrl+C** | 📋 Windows copies the selected files to the system clipboard |
+| **Ctrl+X** | ✂️ Windows marks the selected files for moving |
+| **Ctrl+Alt+V** | 🚀 RoboCopyUI pastes with ordinary copy settings |
+| **Ctrl+Alt+Shift+V** | 🛡️ RoboCopyUI pastes with full preservation for this task |
+| **Ctrl+Alt+D** | 🗑️ Opens permanent-delete confirmation for the selection |
+
+**⚙️ Make the keys yours.** Change, clear, or restore each RoboCopyUI shortcut in settings. Use the tray's pause control when needed.
+
+**📍 Focus matters.** RoboCopyUI shortcuts act in the Explorer file list. Address bars, search fields, file-renaming boxes, and other applications keep their own keyboard behavior. Keep RoboCopyUI running in the tray while using its shortcuts. **Ctrl+V** continues to invoke Windows' normal paste operation.
+
+---
+
+## ⚡ Peak Velocity Showcase
+
+The original project's transfer showcase captures **5 GB transferred in approximately 2 seconds**, with displayed speeds reaching **2.0 GB/s**.
 
 <div align="center">
-  <img src="docs/screenshots/hero-speed-2gbs.png" alt="RoboCopyUI Blazing at 2.0 GB/s" width="94%" />
+  <img src="docs/screenshots/hero-speed-2gbs.png" alt="Original RoboCopyUI large-file transfer showcase" width="94%" />
 </div>
 
 <br/>
 
 <div align="center">
-  <img src="docs/screenshots/complete-5gb-2s.png" alt="RoboCopyUI 5GB in 2s Complete" width="94%" />
+  <img src="docs/screenshots/complete-5gb-2s.png" alt="Original RoboCopyUI 5 GB transfer completion" width="94%" />
 </div>
 
 ---
 
 ## 📊 Dual Real-World Benchmarks
 
-RoboCopyUI is engineered to conquer the two most common file transfer challenges:
+Explore the original project's large-file and small-file showcases. Transfer speed depends on your drives, connection, selected options, and workload.
 
-### 1. 🏎️ Benchmark 1: Large File Raw Velocity (5 GB Transfer)
-- **File Size:** 5.0 GB (Large video/archive file)
-- **Sustained Speed:** **1.9 GB/s – 2.0 GB/s**
-- **Completion Time:** **~2 seconds!**
-- **Key Advantage:** Utilizes `/J` unbuffered direct I/O, bypassing Windows OS cache overhead and pumping data directly to NVMe storage.
+### 1. 🏎️ Large File Raw Velocity — 5 GB Transfer
 
-### 2. ⚡ Benchmark 2: The Small-Files Stress Test (50,000+ Fragmented Files)
-Anyone who has copied `node_modules`, Python virtual environments, or Git repositories knows Windows Explorer takes **an eternity** (dropping to 500 KB/s or freezing).
+- **📁 File size** — 5.0 GB.
+- **⚡ Displayed transfer speed** — 1.9–2.0 GB/s.
+- **⏱️ Completion time** — approximately 2 seconds.
+- **🏎️ Large-file option** — `/J` unbuffered I/O.
+
+### 2. ⚡ Small-Files Stress Test — 50,000+ Files
 
 <div align="center">
-  <img src="docs/screenshots/copying-active.png" alt="50,000 Files Multi-Threaded Transfer at 214 MB/s" width="90%" />
+  <img src="docs/screenshots/copying-active.png" alt="Original 50,000-file multi-threaded transfer showcase" width="90%" />
 </div>
 
-- **Workload:** **50,000+ small fragmented files** (3.2 GB total)
-- **Threads:** **MT: 96 parallel worker threads**
-- **Peak Burst:** **214.2 MB/s**
-- **Average Velocity:** **95.4 MB/s**
-- **Total Time:** **Just 34 seconds!** *(Standard Windows Explorer takes 20+ minutes on this same folder)*
+- **📂 Workload** — 50,000+ small files, 3.2 GB total.
+- **🧵 Threads** — 96 parallel workers.
+- **🚀 Peak burst** — 214.2 MB/s.
+- **📊 Average speed** — 95.4 MB/s.
+- **⏱️ Completion time** — 34 seconds.
 
 <div align="center">
-  <img src="docs/screenshots/copy-complete.png" alt="50,000 Files Completed in 34 Seconds" width="90%" />
+  <img src="docs/screenshots/copy-complete.png" alt="Original small-file transfer completion" width="90%" />
 </div>
 
 ---
 
 ## 🎨 Themes & Customization
 
-RoboCopyUI includes an integrated theme engine supporting **Midnight (Cyber Dark)**, **Clean Light**, and **Classic Dark** modes:
+Choose **Midnight (Cyber Dark)**, **Clean Light**, or **Classic Dark** to match your desktop. Theme previews from the original project are shown below.
 
 | 🌌 Midnight Theme | ☀️ Clean Light Theme | 🌙 Classic Dark Theme |
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/settings-midnight.png" alt="Midnight Theme" width="100%" /> | <img src="docs/screenshots/settings-light.png" alt="Light Theme" width="100%" /> | <img src="docs/screenshots/settings-dark.png" alt="Dark Theme" width="100%" /> |
 | *High-contrast cyberpunk glow* | *Modern, clean daytime aesthetics* | *Sleek, deep neutral dark mode* |
 
----
+### 🌐 Languages & Personalization
 
-## 🖱️ Native Windows Explorer Right-Click Integration
-
-RoboCopyUI integrates directly into the Windows Shell context menu with custom branded icons. You don't need to manually open an app or type command prompt syntax—just right-click any file, folder, or directory:
-
-<div align="center">
-  <img src="docs/screenshots/context-menu.png" alt="Windows Explorer Right-Click Context Menu Integration" width="360px" />
-</div>
-
-- **📋 RoboCopy:** Accelerate file/folder copy operations with multi-threading into clipboard.
-- **✂️ RoboCut:** High-velocity cut and move with atomic cleanup after successful transfer.
-- **📥 RoboPaste:** Direct paste into any folder powered by the Robocopy engine.
-- **🗑️ Robocopy Delete:** Instant turbo directory purge for massive folders (deletes 100,000+ files in seconds without Windows Explorer freezing).
-
----
-
-## 🔥 Comparison: Windows Explorer vs RoboCopyUI
-
-| Feature | Standard Windows Copy | 🚀 RoboCopyUI |
-| :--- | :---: | :---: |
-| **Peak Large File Speed** | ~300 – 600 MB/s | ⚡ **Up to 2.0 GB/s (Full drive bandwidth saturation)** |
-| **Concurrency** | ❌ Single-threaded (1 file at a time) | ⚡ **Up to 128 Parallel Worker Threads (`/MT:128`)** |
-| **50,000 Small Files (`node_modules`)** | 🐢 **Takes an eternity (drops to KB/s)** | 🚀 **Finished in 34 seconds at 95 – 214 MB/s!** |
-| **Hardware Drive Auto-Tuning** | ❌ None | 🤖 **Auto-detects NVMe, SATA SSD, HDD, Network SMB** |
-| **Multi-GB Large Files** | ⚠️ Floods OS RAM cache | 🏎️ **Large File Optimization (`/J` Unbuffered Direct I/O)** |
-| **Locked / In-Use Files** | ❌ Halts entire transfer with modal dialog | 🛡️ **Zero-halt retry engine (`/R:0 /W:0` customizable)** |
-| **Folder Purging / Deletion** | ⏳ Explorer freezes on deep directories | 🗑️ **Turbo RoboDelete (purges 100,000s files in seconds)** |
-| **Visual Telemetry** | 📉 Fluctuating, unreliable estimate | 📊 **Live MB/s & GB/s speed with real-time ETA** |
-| **Explorer Context Menu** | Standard options | 🖱️ **Native Right-Click: RoboCopy, RoboCut, RoboPaste & Robocopy Delete** |
+- **🇬🇧 English / 🇨🇳 简体中文** — choose your interface language in settings.
+- **🎨 Live preview** — preview language and theme choices, then save your preferences.
+- **⌨️ Custom shortcuts** — assign the combinations that fit your workflow.
+- **🔔 Completion sound** — hear when a copy or move finishes successfully.
 
 ---
 
 ## ✨ Key Features Breakdown
 
-### 1. 🚀 Extreme Multi-Threading (Up to 128 Threads)
-- Configure anywhere from **1 to 128 parallel worker threads** (`/MT`).
-- Small files, deep folder hierarchies, and fragmented assets are transferred concurrently instead of waiting sequentially.
-- **Smart Auto-Tune**: Automatically detects drive hardware type (PCIe NVMe SSD, SATA SSD, Spinning HDD, or Network SMB share) and applies the optimal thread ceiling to prevent disk thrashing.
+### 1. 🚀 Extreme Multi-Threading — Up to 128 Threads
 
-### 2. 🏎️ Large File Optimization (`/J` Unbuffered I/O)
-- Switches to unbuffered direct I/O for multi-GB files (ISOs, virtual disks, 4K raw video).
-- Bypasses the Windows file system cache directly to physical storage, preserving system RAM and avoiding cache thrashing.
+- Configure **1–128 parallel worker threads** with `/MT`.
+- Let **🤖 automatic tuning** choose performance settings for your source, destination, and workload.
+- Watch transfer speed and remaining-time estimates in the progress window.
 
-### 3. 🛡️ Fault Tolerance & Custom Retry Rules (`/R` & `/W`)
-- Configure exact retry attempts and wait delay intervals for locked, busy, or permission-restricted files.
-- Never wake up to a transfer that halted at 3 AM because a single temp file was open in another app.
+### 2. 🏎️ Large File Optimization
 
-### 4. 🗑️ Turbo Fast Delete (RoboDelete)
-- Deleting deep directory trees in Windows Explorer can take 20+ minutes while Explorer calculates size.
-- RoboCopyUI uses the **Robocopy Mirror Purge** technique to eradicate hundreds of thousands of files and directories in seconds.
+- Use **`/J` unbuffered I/O** for large-file workloads.
+- Adjust thread count and I/O settings from the desktop interface.
 
-### 5. 🔍 Interactive Skipped Files Inspector
-- Keep track of every file skipped with live classification:
-  - *Access Denied*
-  - *File In Use*
-  - *Corrupted File*
-  - *Filtered by Pattern*
+### 3. 🛡️ Metadata Preservation & Retry Settings
 
-### 6. ⚔️ Collision Scanner & Smart Renaming
-- Pre-scans source and destination to detect file collisions before starting.
-- Options for automatic collision renaming, overwriting, or skipping.
+- **🕒 Folder timestamps** — choose whether ordinary transfers preserve folder timestamps.
+- **📂 Empty folders** — selected directory transfers include empty subdirectories.
+- **🔁 Retry count** — configure how many times a failed copy is retried. The default is **3 retries**.
+- **⏳ Retry delay** — configure the wait between attempts. The default is **5 seconds**.
+- **🎛️ Flexible recovery** — set retries to **0** when you prefer immediate failure reporting, or adjust the delay to suit your storage.
+- **🛡️ Full preservation** — press **Ctrl+Alt+Shift+V** when that particular paste needs permissions, ownership, and other metadata.
 
-### 7. 🖱️ Windows Explorer Right-Click Context Menu
-- Full shell integration (`ShellRegistry.cs`) directly inside Windows Explorer.
-- Right-click any file, folder, or drive to instantly perform **RoboCopy**, **RoboCut**, **RoboPaste**, or **Robocopy Delete** with custom shell icons.
+### 4. 📌 Always Within Reach — The Tray Icon
+
+- Open **⚙️ settings** or **📊 tasks** from the tray.
+- **⏸️ Pause shortcuts** without leaving the app.
+- Enable **🔌 sign-in startup** to have RoboCopyUI ready when you log in.
+- Close settings and continue working while the app stays in the tray.
+- Choose **🚪 Exit** when you are finished.
+
+### 5. 📊 Progress & Task Results
+
+- Follow live transfer speed, file counts, and remaining-time estimates.
+- View errors and execution details in the task window.
+- Keep destination-only files when copying folders into an existing destination.
 
 ---
 
 ## 🛠️ Architecture & Under the Hood
 
-```
-┌────────────────────────────────────────────────────────┐
-│                   RoboCopyUI (WPF)                     │
-│    MainWindow.xaml / SettingsWindow.xaml / Themes      │
-└───────────────────────────┬────────────────────────────┘
-                            │
-       ┌────────────────────┼────────────────────┐
-       ▼                    ▼                    ▼
-┌──────────────┐   ┌─────────────────┐   ┌────────────────┐
-│ PreScan &    │   │ RobocopyEngine  │   │  RoboDelete    │
-│ Collision    │   │  (Process I/O   │   │  Runner        │
-│ Detection    │   │  Streaming)     │   │  (Fast Purge)  │
-└──────────────┘   └────────┬────────┘   └────────────────┘
-                            │ Real-time Stdout Stream
-                            ▼
-           ┌────────────────────────────────┐
-           │      Telemetry & Parsing       │
-           │  • StdoutParser.cs             │
-           │  • AccurateProgressTracker.cs  │
-           │  • SpeedCalculator.cs          │
-           │  • EtaEstimator.cs             │
-           └────────────────────────────────┘
+```plaintext
+Windows File Explorer
+  📋 Ctrl+C / ✂️ Ctrl+X → System Clipboard
+                          │
+  ⌨️ RoboCopyUI Shortcut ─┘
+                          ▼
+                 📌 Desktop Tray Host
+                          │
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+  🚀 Robocopy Transfer          🗑️ Delete Confirmation
+            │                           │
+            ▼                           ▼
+  📊 Progress & Results         📄 Deletion Results
 ```
 
 ---
@@ -176,44 +224,54 @@ RoboCopyUI integrates directly into the Windows Shell context menu with custom b
 
 | Component | Specification |
 | :--- | :--- |
-| **Operating System** | Windows 10 (Build 19041+) / Windows 11 (64-bit) |
-| **Runtime Target** | [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0) (`net10.0-windows`) |
-| **UI Framework** | Windows Presentation Foundation (WPF) + Windows Forms interop |
-| **IDE Supported** | Visual Studio 2022 (v17.12+) / JetBrains Rider / VS Code |
-| **Engine** | Microsoft Windows Native `robocopy.exe` |
+| **🪟 Operating system** | Windows 11 x64 |
+| **⚙️ Runtime target** | .NET 10 — `net10.0-windows` |
+| **🎨 UI framework** | Windows Presentation Foundation (WPF) + Windows Forms interop |
+| **🚀 Transfer engine** | Microsoft Windows `robocopy.exe` |
+| **📦 Installation** | Per-user installer with the .NET desktop runtime included |
+| **🌐 Interface languages** | English and Simplified Chinese |
 
 ---
 
 ## 🚀 Getting Started for Developers
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/tusharrkabir/RoboCopyUI.git
+### 1. 📥 Clone This Contribution
+
+```powershell
+git clone --branch feature/desktop-shortcuts-1.7.3 https://github.com/Snowail/RoboCopyUI.git
 cd RoboCopyUI
 ```
 
-### 2. Open in Visual Studio
-Open `RoboCopyUI.slnx` or `RoboCopyUI.csproj` in **Visual Studio 2022**.
+### 2. 🛠️ Open & Build
 
-*Ensure the **.NET Desktop Development** workload is installed.*
+Install the **.NET 10 SDK** with desktop development support, then open `RoboCopyUI.slnx` or `RoboCopyUI.csproj` in your preferred compatible IDE.
 
-### 3. Build & Run via CLI
 ```powershell
-# Restore & build
-dotnet build
+dotnet build RoboCopyUI.csproj -c Release
 
-# Launch the application
-dotnet run --project RoboCopyUI.csproj
-
-# Launch Settings Window directly
-dotnet run --project RoboCopyUI.csproj --settings
+# Open settings during development
+dotnet run --project RoboCopyUI.csproj -- --settings
 ```
 
-### 4. Publish a Portable Executable
-To generate a single-file, self-contained executable:
+### 3. 🧪 Run the Automated Checks
+
 ```powershell
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet run --project tests/ShortcutChecks -c Release
+dotnet run --project tests/LocalizationChecks -c Release -- .
 ```
+
+### 4. 📦 Build the Complete Installer
+
+Use PowerShell in an **x64 Visual Studio developer environment** with MSVC, **Windows SDK 10.0.26100.0**, and **Inno Setup** with the Chinese Simplified translation.
+
+Put `ISCC.exe` on PATH or pass `-InnoCompiler`. Pass `-MsvcRoot` if `VCToolsInstallDir` is unavailable. The selected .NET installation must contain both `Microsoft.NETCore.App` and `Microsoft.WindowsDesktop.App` at the requested runtime version, which defaults to **10.0.14**.
+
+```powershell
+$dotnetRoot = Split-Path (Get-Command dotnet.exe).Source
+.\scripts\Build-Installer.ps1 -DotnetRoot $dotnetRoot
+```
+
+Find the installer and its SHA-256 manifest in `artifacts/installer/1.7.3`.
 
 ---
 
@@ -221,30 +279,26 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 ```plaintext
 RoboCopyUI/
-├── Assets/                 # Application icons and branding graphics
-├── core/                   # Core business logic & native system services
-│   ├── ClipboardManager.cs # Clipboard monitoring & folder path handling
-│   ├── DriveTypeDetector.cs# Identifies SSD, HDD, USB, Network drives for thread tuning
-│   ├── NotificationService.cs # Native toast notifications
-│   ├── RoboDeleteRunner.cs # Superfast directory deletion via robocopy mirror trick
-│   ├── RobocopyEngine.cs   # Robocopy process management & command builder
-│   ├── ShellRegistry.cs    # Windows Explorer context menu registration
-│   ├── ThemeManager.cs     # Dynamic runtime theme switcher
-│   └── WindowBlurHelper.cs # Acrylic / Mica backdrop blur effects
-├── models/                 # Data contracts, parsers & telemetry calculators
-│   ├── AccurateProgressTracker.cs # High-fidelity progress synchronization
-│   ├── CollisionScanner.cs # Pre-copy collision & overwrite scanner
-│   ├── EtaEstimator.cs     # Exponential moving average ETA calculation
-│   ├── RobocopyLineParser.cs # Real-time line-by-line CLI parser
-│   └── SpeedCalculator.cs  # Multi-sample bandwidth speed calculation
-├── Themes/                 # WPF XAML themes (Dark, Light, Midnight)
-├── docs/screenshots/       # High-resolution real UI screenshots
-├── App.xaml / App.xaml.cs  # Application entrypoint & CLI argument router
-├── MainWindow.xaml (.cs)   # Primary dashboard UI and real-time visualizer
-├── SettingsWindow.xaml(.cs)# Advanced configurations, thread tuning & presets
-├── RoboCopyUI.csproj       # Project build definition (.NET 10 WPF)
-├── RoboCopyUI.slnx         # Visual Studio Solution definition
-└── .gitignore              # Ignores build artifacts (bin/obj), setups, and VS cache
+├── Assets/                    # Icons and completion sound
+├── core/
+│   ├── DesktopHost.cs         # Tray icon and task coordination
+│   ├── ExplorerShortcuts.cs   # Explorer keyboard handling
+│   ├── FileClipboard.cs       # Windows clipboard integration
+│   ├── RobocopyEngine.cs      # Transfer execution
+│   ├── PermanentDeletion.cs   # Confirmed deletion
+│   ├── NotificationService.cs # Notifications and sound
+│   └── ThemeManager.cs        # Theme selection
+├── models/                    # Settings, transfer options and progress
+├── locales/                   # English and Simplified Chinese resources
+├── native/Launcher/           # Native desktop launcher
+├── packaging/                 # Installer and user guides
+├── scripts/                   # Build tools
+├── tests/                     # Automated checks
+├── Themes/                    # Dark, Light and Midnight themes
+├── docs/screenshots/          # Original project screenshots
+├── MainWindow.xaml (.cs)      # Transfer dashboard
+├── SettingsWindow.xaml (.cs)  # User preferences
+└── RoboCopyUI.csproj           # .NET 10 WPF project
 ```
 
 ---
@@ -252,20 +306,24 @@ RoboCopyUI/
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
-1. Fork the Repository
-2. Create your Feature Branch (`git checkout -b feature/NewFeature`)
-3. Commit your Changes (`git commit -m "Add some NewFeature"`)
-4. Push to the Branch (`git push origin feature/NewFeature`)
-5. Open a Pull Request
+
+1. **🍴 Fork** the repository.
+2. **🌿 Create** a feature branch.
+3. **🛠️ Make** your changes and run the relevant checks.
+4. **📤 Push** your branch.
+5. **🤝 Open** a pull request.
+
+[📖 English User Guide](packaging/README.en-US.txt) · [📖 简体中文使用说明](packaging/README.zh-CN.txt)
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-Made with ❤️ by <a href="https://github.com/tusharrkabir"><b>Tushar</b></a> (MT Electronics)
+Made with ❤️ by <a href="https://github.com/tusharrkabir"><b>Tushar</b></a> (MT Electronics)<br/>
+⌨️ Desktop shortcut enhancements contributed by <a href="https://github.com/Snowail"><b>Snowail</b></a>
 </div>

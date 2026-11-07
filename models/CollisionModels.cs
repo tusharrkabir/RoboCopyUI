@@ -1,4 +1,4 @@
-﻿namespace RoboCopyUI
+namespace RoboCopyUI
 {
     public enum CollisionChoice
     {
